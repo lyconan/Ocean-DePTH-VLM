@@ -141,6 +141,7 @@ python scripts/24_deep_error_analysis.py
 
 ## 文档
 
+- `docs/01_yolo_detection.md` — **第一部分 YOLO 检测**：数据集格式 / 用自己数据训练 / 替换官方权重 / 双路推理（960+TTA ∪ 1920）详解
 - `docs/深海生物知识图谱构建进展汇报.md` — 数据集搜集整理与知识图谱构建方法
 - `docs/西太平洋图集整理与OCR纠错流程总结.md` — 历史图集 OCR 数据整理流程
 - `docs/检索v2部署指南.md` — 检索链路部署指引
