@@ -43,7 +43,7 @@ _CONCEPT_TO_PHYLUM_BASE = {
     "Foraminifera": "Foraminifera",
 }
 
-# 扩展映射: FathomNet 622 类的属/种/科级 → 门级
+# 扩展映射: FathomNet 类别的属/种/科级 → 门级
 # 通过 WoRMS API 和分类学知识构建
 _CONCEPT_TO_PHYLUM_EXTENDED = {
     # Echinodermata - 属级

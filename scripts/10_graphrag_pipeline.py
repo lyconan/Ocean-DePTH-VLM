@@ -135,7 +135,6 @@ class DePTHGraphRAGPipeline:
 
         v3.3: dual_path=true 时走自训34纲双路 (960+TTA ∪ 1920) 合并检测,
               宁多勿漏 — 低conf多检出, 误检交由检索层与VLM兜底。
-        v3.2: 支持细粒度YOLO (622类物种/属级), 自动映射到门级用于检索增强。
         YOLO是目标提议网络 + 分类提示器。
         所有conf >= conf_filter的检测都进入GraphRAG + VLM。
         """

@@ -3,7 +3,7 @@
 # YOLO检测 — 34纲自训双路 (960+TTA ∪ 1920, utils/yolo_infer.DualPathDetector)
 # 11c2 端到端实测: recall 87.4% (基线960@conf0.25=78.7%), 剔Other纲acc 94.1%
 # 宁多勿漏: 低conf多检出, 误检交由检索层排序与VLM判读兜底
-# 切回622类细粒度单路: dual_path: false + 原622权重 + conf_filter: 0.01
+# 单路回退: dual_path: false (走 yolo_weights 单路)
 yolo_weights: ./runs/detect/yolo11m_class34-2/weights/best.pt
 dual_path: true
 dual_paths: [[960, true], [1920, false]]   # 每路 (imgsz, augment)
@@ -54,7 +54,7 @@ som_overlap_threshold: 0.15
 padding_ratio: 0.25
 tight_shrink_ratio: 0.05
 
-# Token预算 — 622类YOLO分类可靠, 可适当增加
+# Token预算 — 34纲YOLO分类可靠, 可适当增加
 # 768px resize + 4000 token 预算适配 A40 单卡
 max_vision_tokens: 4000
 tokens_per_image: 800

@@ -129,5 +129,3 @@ docker compose -f deploy/docker-compose.yml --profile infer run --rm infer \
 - **显存不足**: 38 号双路推理峰值较高, 可先把 `paths` 改单路, 或减小 batch。
 - **向量索引缺失**: 报 `no such index` 时, 在 Neo4j 里执行 36/09c 中
   `CREATE VECTOR INDEX entryimage_embeddings ...` 语句重建。
-- **数据集 path 报错**: `config/yolo_finegrained.yaml` 的 `path:` 是相对占位,
-  指向你的数据集实际位置 (默认 `./data/fathomnet_class_yolo`)。

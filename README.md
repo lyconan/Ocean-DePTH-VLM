@@ -11,7 +11,7 @@ Ocean-DePTH-VLM 是一套面向深海原位图像的底栖生物细粒度识别�
 ```mermaid
 flowchart TD
     A[多源数据搜集<br/>FathomNet / BenthicNet / 历史图集] --> B[数据清洗与标注对齐<br/>00b/00c/01/02/03/06]
-    B --> C[YOLO 检测训练<br/>05~06d 双路检测: 34纲粗分类 + 622类细粒度]
+    B --> C[YOLO 检测训练<br/>05~06d 34纲粗分类双路检测: 960+TTA ∪ 1920]
     C --> D[FathomNet 深度筛选与形态种扩充<br/>expand_fathomnet]
     D --> E[BioCLIP 2.5 框级嵌入<br/>07/07h + LoRA v2 微调 26/27/28]
     E --> F[Neo4j 知识图谱<br/>WoRMS 分类骨架 + 原位图嵌入<br/>09系列 + 22]
@@ -120,7 +120,7 @@ python scripts/24_deep_error_analysis.py
 |---|---|---|
 | BioCLIP 2.5 基座 | 公开基座 **BioCLIP 2.5 (ViT-H/14)**：HuggingFace `imageomics/bioclip-2.5-vith14`（1,024 维；首次运行自动下载，支持 `HF_HUB_OFFLINE=1` 离线） | HF 缓存目录 |
 | BioCLIP 2.5 LoRA v2 适配器 | `scripts/27_finetune_lora.py` 微调产物（视觉塔 attn/c_fc/c_proj LoRA rank=32/alpha=64 + ArcFace 头；配 `26_finetune_dataprep.py` 备数据、`28_ft_verify.py` 校验） | `<exp>/lora_adapter_v2/` + `ft_head.pt` |
-| YOLO 检测权重（34 纲双路） | `scripts/05d_train_yolo_class.py` / `05c_train_yolo_finegrained.py` 训练产出 | `runs/detect/<run>/weights/best.pt` |
+| YOLO 检测权重（34 纲双路） | `scripts/05d_train_yolo_class.py` 训练产出 | `runs/detect/<run>/weights/best.pt` |
 | 框级嵌入分片 | `scripts/07h_extract_bioclip25_embeddings.py` | `data/processed/bioclip25_embeddings/emb_shard{i}.npz` |
 | 形态型质心矩阵 | `scripts/35_build_centroids.py` | `centroids_v2.npz` |
 | 盲测集清单 | `scripts/36_build_blindtest.py` | `data/experiments/blindtest/manifest.json` |
@@ -139,7 +139,7 @@ python scripts/24_deep_error_analysis.py
 ## 配置
 
 - `config/neo4j_connection.yaml` / `config/graphrag_inference.yaml`：Neo4j 连接信息。**密码请替换为你自己的值**（占位符 `YOUR_NEO4J_PASSWORD`，建议通过环境变量注入，勿提交真实密码）。
-- `config/yolo_training*.yaml` / `config/yolo_finegrained.yaml`：YOLO 训练超参。
+- `config/yolo_training*.yaml`：YOLO 训练超参。
 - 部分脚本默认路径指向内部数据盘，使用时请改为本地路径。
 
 ## 文档

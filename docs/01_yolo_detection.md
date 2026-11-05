@@ -32,12 +32,10 @@ YOLO 在这里承担两个职责：
 | `scripts/01_download_fathomnet.py` | FathomNet API 下载（CCZ 概念子集）→ COCO |
 | `scripts/02_filter_benthicnet.py` | BenthicNet 元数据 CSV 筛选（深度 >3500 m） |
 | `scripts/03_convert_to_yolo.py` | COCO → YOLO 格式（门级 10 类映射 + 分层划分） |
-| `scripts/06_build_finegrained_yolo.py` | FathomNet 官方 COCO → 622 类细粒度 YOLO 数据集 |
 | `scripts/06d_build_class_yolo.py` | FathomNet 官方 2553 类 YOLO 数据 → 34 纲 YOLO 数据集（**生产数据集**） |
 | `scripts/package_class_yolo.sh` | 34 纲数据集并行分片打包（~358 GB）供跨服务器转移 |
 | `scripts/05_train_yolo.py` | 基线训练（yolo11s / 10 门类 / imgsz 640） |
 | `scripts/05b_train_yolo_improved.py` | 改进训练（yolo11m / 10 门类 / 100 epochs） |
-| `scripts/05c_train_yolo_finegrained.py` | 622 类细粒度训练（yolo11m / imgsz 768 / 200 epochs） |
 | `scripts/05d_train_yolo_class.py` | 34 纲训练（yolo11m / imgsz 960 / 120 epochs，**生产训练脚本**） |
 | `scripts/utils/yolo_infer.py` | `DualPathDetector` 双路推理模块（生产推理实现） |
 | `scripts/38_blindtest_detect_retrieval.py` | 盲测集端到端基准（含双路检测调用） |
@@ -96,7 +94,7 @@ names:                 # 类别 id → 类名
   33: Other
 ```
 
-> **最少需要的文件**：`data.yaml` + `images/{train,val}/` + `labels/{train,val}/`，共三样。`class_table.json`、`classes.names`、`class_weights.json`（622 类构建器附带产物）只是统计/参考文件，训练不依赖。
+> **最少需要的文件**：`data.yaml` + `images/{train,val}/` + `labels/{train,val}/`，共三样。`class_table.json`、`classes.names`、`class_weights.json`（构建器附带产物）只是统计/参考文件，训练不依赖。
 
 ### 2.3 另一种布局（03 号脚本的输出）
 
@@ -130,7 +128,6 @@ data/processed/fathomnet_yolo/
   规模：154,701 图 / 682,894 框（train+val，来自 `class_table.json` 的 `_meta` 与逐类求和）。
 - 34 纲的映射规则（`06d`）：FathomNet concept → WoRMS 纲（查 `fathomnet_candidates.json` 的 `taxonomy_worms.class` 链）；`Teleostei→Actinopterygii`、`Stenolaemata→Gymnolaemata` 两个纲名合并；框数 < 50 的纲并入 `Other`；器械/垃圾类（`pass=False` 或无纲）丢弃。
 - **10 门类**（`03` + `05/05b`）：`utils/taxonomy_mapper.py` 内置 `APSMA_COARSE_CLASS_MAP`（Porifera/Echinodermata/Cnidaria/Annelida/Arthropoda/Xenophyophorea/Mollusca/Brachiopoda/Foraminifera 共 9 门 + Unknown = id 9），对应 `config/yolo_training.yaml` 的 `nc: 10`。
-- **622 类**（`06` + `05c`）：FathomNet 官方 COCO 中训练框数 ≥ `--min-samples`（默认 50）的物种/属级概念，按频率降序编号，无 Unknown。
 
 ---
 
@@ -232,7 +229,6 @@ EOF
 |---|---|---|
 | 05 | `results/yolo_training/depth_vlm_yolo/weights/best.pt` | → `models/yolo_fathomnet.pt` |
 | 05b | `runs/detect/results/yolo_training/depth_vlm_yolo-4-improved/weights/best.pt` | → `models/yolo_fathomnet_improved.pt`，并回写 `graphrag_inference.yaml` |
-| 05c | `runs/detect/results/yolo_training/depth_vlm_yolo-finegrained-622/weights/best.pt` | → `models/yolo_finegrained_622.pt`，并回写 yaml |
 | 05d | `runs/detect/<name>/weights/best.pt`（默认 name=`yolo11m_class34`） | 无复制，生产直接引用 runs 路径 |
 
 ---
@@ -305,7 +301,7 @@ FathomNet 与 BenthicNet 均为公开数据集。**本仓库不收录任何图�
 
 - **FathomNet**（https://fathomnet.org ，CC BY-BNC 2.0 类许可，商用需注意）：
   - 路线 A（`01` 号脚本）：FathomNet API 按 24 个 CCZ 相关概念各取 ≤1000 图 → `data/raw/fathomnet_raw/`（COCO json + 图像），并生成 20% 测试集 UUID 阻止列表 `data/test/fathomnet_test_uuids.txt`（seed=42，防泄漏）；
-  - 路线 B（生产数据集所需）：从 FathomNet 官方发布下载**完整标注包**，按如下布局放置（`06d`/`06` 硬编码期望的结构，`--fathomnet-dir` 可指定根目录）：
+  - 路线 B（生产数据集所需）：从 FathomNet 官方发布下载**完整标注包**，按如下布局放置（`06d` 硬编码期望的结构，`--fathomnet-dir` 可指定根目录）：
 
     ```
     <FathomNet 根目录>/
@@ -336,7 +332,7 @@ python scripts/36_build_blindtest.py --restore  # 一键恢复被删节点（评
 ## 7. 常见问题 FAQ
 
 **Q1：训练/推理时 ultralytics 报 data.yaml 路径找不到？**
-`config/yolo_training.yaml` 用相对路径 `./data/processed/apsma_aligned_yolo`，`config/yolo_training_subset.yaml` 与 `config/yolo_finegrained.yaml` 写的是**构建机绝对路径**（指向源工程目录）。复现时把 `path:` 改成你本地数据集根目录即可；`05d` 会自动把 `data.yaml` 改写成 `data.local.yaml`（`path` 替换为运行时绝对路径），无需手工处理。
+`config/yolo_training.yaml` 用相对路径 `./data/processed/apsma_aligned_yolo`，`config/yolo_training_subset.yaml` 写的是**构建机绝对路径**（指向源工程目录）。复现时把 `path:` 改成你本地数据集根目录即可；`05d` 会自动把 `data.yaml` 改写成 `data.local.yaml`（`path` 替换为运行时绝对路径），无需手工处理。
 
 **Q2：`06d` 报找不到 `fathomnet_candidates.json`？**
 该文件由源工程的 `expand_fathomnet.py`（concept 扩展 + WoRMS 分类回填）生成，未随本仓库发布。要么从源工程获取，要么自己写 concept→纲 的映射 JSON（结构：`{"concepts": {"<concept>": {"pass": bool, "taxonomy_worms": {"class": {"name": "<纲名>"}}}}}`）。

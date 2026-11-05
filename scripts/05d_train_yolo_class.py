@@ -22,7 +22,7 @@
 训练配置依据:
   - MBARI/FathomNet 实践: 大框量 (本项目 68 万框/12.6 万图) + ultralytics 标准增强
   - 推理阈值建议 conf=0.025, iou=0.4 (MBARI monster 检测器生产配置, 高召回)
-  - 34 类长尾已比 622/2553 类大幅缓解, focal γ=1.0 即可
+  - 34 类长尾已比 FathomNet 官方 2553 类大幅缓解, focal γ=1.0 即可
 """
 import argparse
 import os
