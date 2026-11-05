@@ -1,0 +1,60 @@
+# GraphRAG推理管线配置 (v3.3 — 34纲自训双路YOLO + 8047形态型检索库)
+
+# YOLO检测 — 34纲自训双路 (960+TTA ∪ 1920, utils/yolo_infer.DualPathDetector)
+# 11c2 端到端实测: recall 87.4% (基线960@conf0.25=78.7%), 剔Other纲acc 94.1%
+# 宁多勿漏: 低conf多检出, 误检交由检索层排序与VLM判读兜底
+# 切回622类细粒度单路: dual_path: false + 原622权重 + conf_filter: 0.01
+yolo_weights: ./runs/detect/yolo11m_class34-2/weights/best.pt
+dual_path: true
+dual_paths: [[960, true], [1920, false]]   # 每路 (imgsz, augment)
+yolo_device: cuda:0                          # 2026-10-30 VLM切到GPU1(8001)后, YOLO与BioCLIP均在GPU0
+conf_filter: 0.05
+iou_nms: 0.55
+
+# Neo4j知识图谱
+neo4j_uri: bolt://localhost:7687
+neo4j_user: neo4j
+# TODO: 替换为你的 Neo4j 密码（建议用环境变量 NEO4J_PASSWORD 注入, 勿提交真实密码）
+neo4j_password: YOUR_NEO4J_PASSWORD
+
+# BioCLIP嵌入 — 统一 BioCLIP 2.5 ViT-H/14 (1024维)
+# 实际模型由 scripts/utils/bioclip_embed.py 共享封装加载, 此处无需配置
+
+# 向量检索 — 8047形态型检索库, 可用更多参考
+top_k: 5
+soft_boost: 1.05
+max_overretrieve_factor: 2
+
+# YOLO分类提示控制
+# 34纲YOLO 剔Other纲acc 94.1%, 分类可靠, 启用YOLO提示
+# true: 使用YOLO纲名→门级映射作为GraphRAG检索soft_boost和VLM prompt参考
+# false: 禁用YOLO分类提示, GraphRAG完全依赖BioCLIP向量检索
+use_yolo_hint: true
+
+# VLM推理 — 72B AWQ INT4 + vLLM 单卡GPU1 (镜像 conanlee126/oceanexus_infer:v0.5.2-awq-fixed)
+# 2026-10-30 起 VLM API 由 GPU0 transformers(8000) 切换为 GPU1 vLLM(8001)
+# 启动: oceanexus_72b_h800_deploy/docker/start_vllm.sh a40 1 8001
+# 注意: A40档上下文8192/单并发, 模型名 oceanexus-72b-awq; GPU0留予YOLO+BioCLIP
+vlm_model: oceanexus-72b-awq
+vlm_model_path: /mnt/oneocean_200TBnas_feitian/Oceanus-all/72B-training/lsj/Qwen2.5_VL_72b_Lora_FT/oceanexus_72b_h800_deploy/models/Qwen2.5-VL-72B-Oceanexus-AWQ
+# 72B 微调模型 (Oceanexus V0.2, AWQ INT4 量化)
+vlm_model_72b: oceanexus-72b-awq
+vlm_model_path_72b: /mnt/oneocean_200TBnas_feitian/Oceanus-all/72B-training/lsj/Qwen2.5_VL_72b_Lora_FT/oceanexus_72b_h800_deploy/models/Qwen2.5-VL-72B-Oceanexus-AWQ
+vlm_api_url: http://172.17.0.1:8001/v1
+vlm_api_key: EMPTY
+vlm_temperature: 0.1
+vlm_max_tokens: 4096
+max_concurrent_retries: 5
+
+# Set-of-Mark
+som_small_threshold: 50
+som_overlap_threshold: 0.15
+
+# 上下文裁剪
+padding_ratio: 0.25
+tight_shrink_ratio: 0.05
+
+# Token预算 — 622类YOLO分类可靠, 可适当增加
+# 768px resize + 4000 token 预算适配 A40 单卡
+max_vision_tokens: 4000
+tokens_per_image: 800

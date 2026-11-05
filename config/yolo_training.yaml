@@ -1,0 +1,39 @@
+# YOLO11训练配置 - APSMA对齐的深海底栖生物检测
+# 类别来自APSMA分类体系树对齐
+path: ./data/processed/apsma_aligned_yolo
+train: images/train
+val: images/val
+test: images/test
+
+nc: 10
+names:
+  0: Porifera
+  1: Echinodermata
+  2: Cnidaria
+  3: Annelida
+  4: Arthropoda
+  5: Xenophyophorea
+  6: Mollusca
+  7: Brachiopoda
+  8: Foraminifera
+  9: Unknown
+
+# 训练参数
+base_model: yolo11s.pt
+imgsz: 640
+epochs: 150
+batch: 16
+lr0: 0.01
+lrf: 0.0001
+warmup_epochs: 5
+patience: 25
+
+# 数据增强
+mosaic: 1.0
+mixup: 0.1
+copy_paste: 0.1
+flipud: 0.5
+hsv_v: 0.4
+
+# 推理阈值
+conf_filter: 0.2

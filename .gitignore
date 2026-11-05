@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Model weights / embeddings (外置, 不入库)
+*.safetensors
+*.pt
+*.pth
+*.npz
+*.pkl
+*.onnx
+*.bin
+
+# Runtime outputs
+logs/
+runs/
+results/
+data/*
+!data/.gitkeep
+nohup.out
+
+# Secrets / env
+.env
+.env.local
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
