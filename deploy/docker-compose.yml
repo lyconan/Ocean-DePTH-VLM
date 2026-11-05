@@ -56,9 +56,11 @@ services:
       DEPTH_EXP: /exp                  # 基准/中间产物输出目录
       # DEPTH_VAL_DIR: /data/FathomNet # 场景图目录 (跑盲测基准时取消注释)
       # YOLO_WEIGHTS: runs/detect/yolo11m_class34-2/weights/best.pt
+      # HF_HUB_OFFLINE: 1             # 离线环境开启 (需先挂载下方 HF 缓存卷)
     volumes:
       - ..:/work          # 仓库根目录 (代码 + data/models 权重)
       - ../exp:/exp       # 运行输出 (盲测报告/缓存)
+      # - ~/.cache/huggingface:/root/.cache/huggingface:ro  # 离线环境: 挂载宿主机 HF 缓存 (含 BioCLIP 2.5 基座), 避免每次 --rm 重下 ~2.5GB
       # - /path/to/FathomNet:/data/FathomNet:ro   # 场景图目录 (可选)
     shm_size: "8gb"       # DataLoader 共享内存
     deploy:

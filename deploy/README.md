@@ -119,6 +119,13 @@ docker compose -f deploy/docker-compose.yml --profile infer run --rm infer \
 - **Neo4j 连不上**: 推理容器内用服务名 `bolt://neo4j:7687`; 宿主机脚本用
   `NEO4J_URI=bolt://localhost:7687`。密码默认 `password`, 改密码时同步导出
   `NEO4J_PASSWORD` (个别历史脚本读 `NEO4J_PASS`)。
+- **BioCLIP 基座下载失败 / 离线环境**: BioCLIP 2.5 基座 (~2.5GB) 不随仓库分发,
+  首次运行需能访问 HuggingFace。有网但容器用 `--rm` 时建议在 compose 的
+  `infer.volumes` 挂载 `~/.cache/huggingface:/root/.cache/huggingface:ro`,
+  缓存落宿主机、避免每次重下; 完全离线的机器在有网机器上缓存好后, 同样挂载
+  并设 `HF_HUB_OFFLINE=1` (compose 中已预留注释行)。
+- **宿主机直跑缺依赖**: `utils/bioclip_embed.py` 依赖 `open_clip_torch`/`peft`,
+  已列入根目录 `requirements.txt`; 镜像路线则由 `deploy/Dockerfile.infer` 预装。
 - **显存不足**: 38 号双路推理峰值较高, 可先把 `paths` 改单路, 或减小 batch。
 - **向量索引缺失**: 报 `no such index` 时, 在 Neo4j 里执行 36/09c 中
   `CREATE VECTOR INDEX entryimage_embeddings ...` 语句重建。

@@ -18,6 +18,7 @@ venv/
 logs/
 runs/
 results/
+exp/
 data/*
 !data/.gitkeep
 # 例外: 随仓库分发的小型检索索引/词典资产 (均 <20MB)
