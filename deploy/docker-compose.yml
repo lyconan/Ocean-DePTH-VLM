@@ -51,7 +51,7 @@ services:
       NEO4J_URI: bolt://neo4j:7687     # 容器网络内直达 neo4j 服务
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: password
-      NEO4J_PASS: password             # 兼容旧脚本 (11c 系列读 NEO4J_PASS)
+      NEO4J_PASS: password             # 兼容个别历史脚本 (读 NEO4J_PASS)
       DEPTH_WORK: /work                # 仓库根目录挂载点
       DEPTH_EXP: /exp                  # 基准/中间产物输出目录
       # DEPTH_VAL_DIR: /data/FathomNet # 场景图目录 (跑盲测基准时取消注释)

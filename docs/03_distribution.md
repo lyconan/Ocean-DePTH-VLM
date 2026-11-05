@@ -20,6 +20,8 @@
 
 > 注: `*.pt/*.npz` 已被仓库 `.gitignore` 排除, 因此必须经模型仓库分发;
 > 两个 json 索引已随代码仓库分发, 模型仓库内为冗余备份。
+> BioCLIP 2.5 基座 (ViT-H/14, `imageomics/bioclip-2.5-vith14`, ~2.5GB) **不随模型仓库分发**,
+> 首次运行时从 HuggingFace 自动下载 (支持 `HF_HUB_OFFLINE=1` 离线); 仓库只分发 LoRA v2 适配器。
 
 上传命令:
 
@@ -38,28 +40,29 @@ modelscope upload <org>/depth-vlm-assets taxonomy/ --repo-type model
 发布者最后一步: 把 `deploy/download_assets.sh` 顶部的
 `MODELSCOPE_MODEL_REPO` 占位符改为 `<org>/depth-vlm-assets`。
 
-## 2. 魔搭数据集仓库 (`<org>/depth-vlm-dataset`, ~287GB)
+## 2. 魔搭数据集仓库 (`<org>/depth-vlm-dataset`, ~365GB) — **后续上传**
 
 内容: 34 纲 YOLO 检测训练集 `fathomnet_class_yolo/` (images 符号链接已解包为实文件)。
 
-打包为 6 个分片 (魔搭单文件上限内, 每片 ~48GB):
+> 状态: **后续上传** — 训练数据集 (~365GB) 尚未上传至魔搭, 上传前模型仓库已可支撑
+> 全部推理与评测链路 (检测权重 / LoRA 适配器 / 质心 / 索引)。
+
+打包为 8 个 tar 分片 (用仓库自带 `scripts/package_class_yolo.sh`, 默认 8 分片并行打包):
 
 ```bash
 cd <repo-root>
-tar -cf - data/processed/fathomnet_class_yolo \
-  | split -b 48g - fathomnet_class_yolo.tar.part
-# 生成 fathomnet_class_yolo.tar.part{aa..af}, 用 md5sum 记录校验值
-md5sum fathomnet_class_yolo.tar.part* > fathomnet_class_yolo.md5
+bash scripts/package_class_yolo.sh 8            # 生成 fathomnet_class_yolo_part{00..07}.tar
+md5sum data/processed/fathomnet_class_yolo_part*.tar > fathomnet_class_yolo.md5
 ```
 
 上传:
 
 ```bash
-modelscope upload <org>/depth-vlm-dataset fathomnet_class_yolo.tar.partaa --repo-type dataset
-# ... 依次上传 partab..partaf 与 fathomnet_class_yolo.md5
+modelscope upload <org>/depth-vlm-dataset fathomnet_class_yolo_part00.tar --repo-type dataset
+# ... 依次上传 part01..part07 与 fathomnet_class_yolo.md5
 ```
 
-用户侧恢复: `bash deploy/download_assets.sh --with-dataset` (脚本内自动 cat 分片 + tar 解包)。
+用户侧恢复: `bash deploy/download_assets.sh --with-dataset` (脚本内自动合并分片 + tar 解包)。
 
 ## 3. Docker Hub (`lyconan/depth-vlm-infer:v0.1`)
 
@@ -105,7 +108,7 @@ FathomNet 引用格式 (模型卡与论文中标注):
 ## 5. 发布前检查项
 
 - [ ] 模型仓库 6 项资产上传完毕, 用干净目录跑 `deploy/download_assets.sh` 验证落位
-- [ ] 数据集 6 分片 md5 校验通过, 下载端 `--with-dataset` 解包成功
+- [ ] 数据集 8 分片 md5 校验通过, 下载端 `--with-dataset` 解包成功 (**后续上传, 暂未就绪**)
 - [ ] Docker Hub 镜像拉取 + `scripts/setup/verify_install.py` 6 步全 PASS
 - [ ] `deploy/download_assets.sh` 占位 repo id 已替换为真实地址
 - [ ] 仓库根 `LICENSE` (Apache-2.0) 与数据声明就位

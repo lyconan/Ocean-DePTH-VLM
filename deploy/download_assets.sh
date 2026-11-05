@@ -10,12 +10,12 @@
 #                               -> data/models/bioclip_lora/lora_adapter_v2/
 #     centroids_v2.npz          2,638 形态种质心 (检索融合用)
 #                               -> data/experiments/ft_20261102/centroids_v2.npz
-#   数据集仓库 (DATASET_REPO, 可选, ~287GB, 6 个 tar 分片):
-#     fathomnet_class_yolo.tar.part{00..05} -> 解包至 data/processed/fathomnet_class_yolo/
+#   数据集仓库 (DATASET_REPO, ~365GB, 8 个 tar 分片, 后续上传):
+#     fathomnet_class_yolo_part{00..07}.tar -> 解包至 data/processed/fathomnet_class_yolo/
 #
 # 用法:
 #   bash deploy/download_assets.sh                  # 仅下载模型权重 (~300MB)
-#   bash deploy/download_assets.sh --with-dataset   # 额外下载 287GB 训练数据集
+#   bash deploy/download_assets.sh --with-dataset   # 额外下载 365GB 训练数据集
 #
 # 前置: pip install modelscope  (脚本会自动检测并安装)
 # =============================================================================
@@ -45,7 +45,7 @@ trap 'rm -rf "$STAGE"' EXIT
 
 log "仓库根目录: $ROOT"
 log "模型仓库:   $MODEL_REPO"
-[[ $WITH_DATASET -eq 1 ]] && log "数据集仓库: $DATASET_REPO (~287GB, 确认磁盘空间充足)"
+[[ $WITH_DATASET -eq 1 ]] && log "数据集仓库: $DATASET_REPO (~365GB, 确认磁盘空间充足)"
 
 # --- 0. modelscope CLI ---
 if ! python3 -c "import modelscope" >/dev/null 2>&1; then
@@ -73,15 +73,15 @@ else
     log "警告: 暂存区未找到 yolo11m_class34_best.pt (请核对模型仓库内容)"
 fi
 
-# --- 3. 落位: BioCLIP LoRA v2 适配器 ---
+# --- 3. 落位: BioCLIP 2.5 LoRA v2 适配器 ---
 LORA_DST="$MODELS_DIR/bioclip_lora/lora_adapter_v2"
 if [[ -d "$STAGE/bioclip_lora_v2" ]]; then
     mkdir -p "$(dirname "$LORA_DST")"
     rm -rf "$LORA_DST"
     cp -r "$STAGE/bioclip_lora_v2" "$LORA_DST"
-    log "BioCLIP LoRA v2 -> $LORA_DST ($(du -sh "$LORA_DST" | cut -f1))"
+    log "BioCLIP 2.5 LoRA v2 -> $LORA_DST ($(du -sh "$LORA_DST" | cut -f1))"
 else
-    log "警告: 暂存区未找到 bioclip_lora_v2/ 目录 (无适配器将退回 BioCLIP 基座)"
+    log "警告: 暂存区未找到 bioclip_lora_v2/ 目录 (无适配器将退回 BioCLIP 2.5 基座 ViT-H/14)"
 fi
 
 # --- 4. 落位: 质心 npz ---
@@ -95,7 +95,7 @@ else
     log "警告: 暂存区未找到 centroids_v2.npz (cfusion 变体将不可用)"
 fi
 
-# --- 5. 可选: 287GB 训练数据集 (6 个 tar 分片) ---
+# --- 5. 可选: 365GB 训练数据集 (8 个 tar 分片, 后续上传) ---
 if [[ $WITH_DATASET -eq 1 ]]; then
     DS_DST="$DATA_DIR/dataset_dl"
     mkdir -p "$DS_DST"
@@ -108,7 +108,7 @@ print("数据集仓库下载完成")
 PY
     log "合并分片并解包 -> $DATA_DIR/processed/fathomnet_class_yolo/"
     mkdir -p "$DATA_DIR/processed/fathomnet_class_yolo"
-    cat "$DS_DST"/fathomnet_class_yolo.tar.part* | tar -xf - -C "$DATA_DIR/processed/fathomnet_class_yolo"
+    cat "$DS_DST"/fathomnet_class_yolo_part*.tar | tar -xf - -C "$DATA_DIR/processed/fathomnet_class_yolo"
     log "数据集解包完成; 可删除 $DS_DST 释放空间"
 fi
 

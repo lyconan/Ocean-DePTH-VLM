@@ -12,34 +12,37 @@ Ocean-DePTH-VLM 是一套面向深海原位图像的底栖生物细粒度识别�
 flowchart TD
     A[多源数据搜集<br/>FathomNet / BenthicNet / 历史图集] --> B[数据清洗与标注对齐<br/>00b/00c/01/02/03/06]
     B --> C[YOLO 检测训练<br/>05~06d 双路检测: 34纲粗分类 + 622类细粒度]
-    C --> D[框级裁剪<br/>12a/12e/13a/13g]
-    D --> E[BioCLIP 2.5 框级嵌入<br/>07系列 + LoRA v2 微调 26/27/28]
+    C --> D[FathomNet 深度筛选与形态种扩充<br/>expand_fathomnet]
+    D --> E[BioCLIP 2.5 框级嵌入<br/>07/07h + LoRA v2 微调 26/27/28]
     E --> F[Neo4j 知识图谱<br/>WoRMS 分类骨架 + 原位图嵌入<br/>09系列 + 22]
     F --> G[形态型检索库与质心<br/>build_*_index / 29_reindex / 35_build_centroids]
     G --> H[GraphRAG 检索管线<br/>10_graphrag_pipeline + 14_apsma_search_api]
     H --> I[盲测评测<br/>36_build_blindtest / 38_detect_retrieval<br/>cfusion 融合重排]
-    I --> J[物种级 strict top-1/5/10<br/>+ 误差分析 24/25]
+    I --> J[物种级 strict top-1/5/10<br/>+ 误差分析 24]
 ```
 
 ## 目录结构
 
 ```
 Ocean-DePTH-VLM-Deploy-New/
-├── scripts/                 # 全流程脚本（按编号分阶段）
+├── scripts/                 # 全流程脚本（38 个编号脚本 + 1 个打包脚本，按编号分阶段）
 │   ├── 00b~03, 06_parse     # 数据下载/清洗/YOLO格式转换/图集标注对齐
+│   ├── expand_fathomnet.py  # FathomNet 深度筛选与形态种扩充（检索库框图来源）
 │   ├── 05~06d               # YOLO 检测训练（粗分类/细粒度/类别均衡）
-│   ├── 07~07h, 12b~12h, 13c # BioCLIP 嵌入提取与向量索引更新
-│   ├── 09~09f, 16, 22       # 知识图谱构建（WoRMS 导入/重建/谱系回填/知识注入）
-│   ├── build_*_index.py 等  # 形态型/分类骨架/图集/物种名索引构建
-│   ├── 10~11f, 12a~12i      # GraphRAG 检索与端到端评测
-│   ├── 13a~13h              # 检测框选择/校验/帧切分统计
-│   ├── 14~15, 23~25b        # APSMA 检索 API、消融实验、误差分析
+│   ├── 07, 07h              # BioCLIP 2.5 嵌入提取（07 为共享嵌入模块，09 号构建图谱时动态加载）
+│   ├── 09~09f, 22           # 知识图谱构建（WoRMS 导入/图谱构建/重建/谱系回填/知识注入）
+│   ├── build_*_index.py 等  # 形态种主索引链（物种名索引→北太/海山图集合并→形态种聚合）
+│   ├── 10, 11c2             # GraphRAG 检索管线与端到端推理
+│   ├── 14, 24               # 检索 API 与误差深度分析
 │   ├── 26~28                # BioCLIP 2.5 视觉塔 LoRA + ArcFace 微调
-│   ├── 29~38                # 重索引/质心/盲测集构建/闭卷与盲测评测
-│   └── utils/               # 共享工具（BioCLIP 封装、PDF 解析、数据整理等）
+│   ├── 29, 34~38            # 重索引/终评/质心/盲测集构建/闭卷与盲测评测
+│   ├── package_class_yolo.sh # 34 纲数据集并行分片打包（跨服务器转移）
+│   ├── setup/               # 部署冒烟测试（verify_install.py）
+│   └── utils/               # 共享工具（BioCLIP 2.5 封装、双路推理、PDF 解析、数据整理等）
 ├── utils/                   # 预留（当前共享工具位于 scripts/utils/）
 ├── config/                  # Neo4j 连接、YOLO 训练、GraphRAG 推理配置
 ├── docs/                    # 部署与构建方法文档
+├── deploy/                  # 一键部署（Docker Compose / 资产下载脚本 / 部署指南）
 ├── data/                    # 数据与产物（不入库，运行时生成）
 └── requirements.txt
 ```
@@ -100,7 +103,7 @@ python scripts/35_build_centroids.py
 python scripts/36_build_blindtest.py
 
 # (2) 检测+粗类别+精细检索 盲测基准（无 VLM，纯检索链路）
-#     YOLO双路检测 → tight裁剪 → BioCLIP v2 嵌入+TTA → 向量索引 top-10
+#     YOLO双路检测 → tight裁剪 → BioCLIP 2.5 LoRA v2 嵌入+TTA → 向量索引 top-10
 #     → mid聚合 + cfusion(0.5*图像相似 + 0.5*质心相似) → 物种/属级 strict top-1/5/10
 python scripts/38_blindtest_detect_retrieval.py
 
@@ -115,8 +118,8 @@ python scripts/24_deep_error_analysis.py
 
 | 资源 | 产出/获取方式 | 产出路径 |
 |---|---|---|
-| BioCLIP 2.5 基座 | HuggingFace `imageomics/bioclip-2`（首次运行自动下载，支持 `HF_HUB_OFFLINE=1` 离线） | HF 缓存目录 |
-| BioCLIP LoRA v2 适配器 | `scripts/27_finetune_lora.py`（视觉塔 32 层 MHA LoRA rank=16 + ArcFace，配 `26_finetune_dataprep.py` 备数据、`28_ft_verify.py` 校验） | `<exp>/lora_adapter_v2/` + `ft_head.pt` |
+| BioCLIP 2.5 基座 | 公开基座 **BioCLIP 2.5 (ViT-H/14)**：HuggingFace `imageomics/bioclip-2.5-vith14`（1,024 维；首次运行自动下载，支持 `HF_HUB_OFFLINE=1` 离线） | HF 缓存目录 |
+| BioCLIP 2.5 LoRA v2 适配器 | `scripts/27_finetune_lora.py` 微调产物（视觉塔 attn/c_fc/c_proj LoRA rank=32/alpha=64 + ArcFace 头；配 `26_finetune_dataprep.py` 备数据、`28_ft_verify.py` 校验） | `<exp>/lora_adapter_v2/` + `ft_head.pt` |
 | YOLO 检测权重（34 纲双路） | `scripts/05d_train_yolo_class.py` / `05c_train_yolo_finegrained.py` 训练产出 | `runs/detect/<run>/weights/best.pt` |
 | 框级嵌入分片 | `scripts/07h_extract_bioclip25_embeddings.py` | `data/processed/bioclip25_embeddings/emb_shard{i}.npz` |
 | 形态型质心矩阵 | `scripts/35_build_centroids.py` | `centroids_v2.npz` |

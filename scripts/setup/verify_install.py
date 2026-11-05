@@ -4,11 +4,11 @@
 verify_install.py — 部署冒烟测试 (smoke test)
 
 逐步检查并打印 PASS/FAIL:
-  1. 资产就位: YOLO 权重 / BioCLIP LoRA 适配器 / 质心 npz / morphospecies 索引
+  1. 资产就位: YOLO 权重 / BioCLIP 2.5 LoRA v2 适配器 / 质心 npz / morphospecies 索引
   2. Neo4j 连接 (Morphospecies / EntryImage / 向量索引统计)
   3. 质心加载 (centroids_v2.npz)
   4. 内置 demo 小图 YOLO 推理
-  5. BioCLIP v2 (+LoRA) 嵌入
+  5. BioCLIP 2.5 (ViT-H/14, +LoRA v2) 嵌入
   6. 向量检索 top-5
 
 用法:
@@ -75,7 +75,7 @@ class SkipStep(Exception):
 def check_assets():
     missing, found = [], []
     for label, path in (("YOLO 权重", YOLO_WEIGHTS),
-                        ("BioCLIP LoRA 适配器", LORA_DIR),
+                        ("BioCLIP 2.5 LoRA v2 适配器", LORA_DIR),
                         ("质心 npz", CENTROIDS),
                         ("morphospecies 索引", MSP_JSON)):
         (found if os.path.exists(path) else missing).append(f"{label}: {path}")
@@ -225,7 +225,7 @@ def main():
     step("2/6 Neo4j 连接与图谱统计", check_neo4j)
     step("3/6 质心加载", check_centroids)
     if step("4/6 YOLO 推理 (内置 demo 图)", check_yolo):
-        if step("5/6 BioCLIP 嵌入", check_embed):
+        if step("5/6 BioCLIP 2.5 嵌入", check_embed):
             step("6/6 向量检索 top-5", check_retrieve)
         else:
             print("\n(嵌入失败, 跳过检索)")

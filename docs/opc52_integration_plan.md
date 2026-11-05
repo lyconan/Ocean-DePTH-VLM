@@ -342,7 +342,7 @@ for species in apsma_species_subset:
 | taxon_node.csv → 21门子集 | apsma_knowledge.jsonl (186形态型) | WoRMS精细分类树增强形态型的taxonomy字段 |
 | taxonrelationship.csv → 21门子集 | 09脚本Neo4j导入 | 直接作为Neo4j节点/关系源,构建完整分类层级 |
 | speciesprofile.txt | APSMA形态型的features字段 | 补充深度范围、分布、底质等生态属性 |
-| WoRMS 物种图片 | BioCLIP嵌入(185形态型) | 图片检索库可补充更多物种的视觉特征 |
+| WoRMS 物种图片 | BioCLIP 2.5 嵌入(185形态型) | 图片检索库可补充更多物种的视觉特征 |
 | WoRMS 物种描述MD | apsma_knowledge.jsonl | 物种描述知识库增强形态型的描述字段 |
 | 中国动物志图片+描述 | 生物图集检索库(1,287图) | 补充中国海域物种的详细鉴定特征 |
 | OBIS出现记录 | BISMaL DwC-A (977K记录) | OBIS补充缺失的西太出现记录 |
