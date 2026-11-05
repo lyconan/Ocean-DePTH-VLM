@@ -1,0 +1,11 @@
+{
+  "_description": "WoRMS lineage.class -> YOLO 34类名 别名映射 (2026-11-03 对齐)",
+  "_usage": "GT纲别经本表映射后与模型检测 name 比对; 空列表=模型无对应类, 评测时排除; 高阶元taxa按latin补配",
+  "Teleostei": ["Actinopterygii"],
+  "Anthozoa": ["Octocorallia", "Hexacorallia"],
+  "Solenogastres": [],
+  "_high_rank_fallbacks": "以下为高阶元mid(lineage无class字段), 按latin补配:",
+  "Actinopterygii": ["Actinopterygii"],
+  "Crustacea": ["Malacostraca", "Thecostraca"],
+  "Myzostomida": ["Polychaeta"]
+}

@@ -20,6 +20,15 @@ runs/
 results/
 data/*
 !data/.gitkeep
+# 例外: 随仓库分发的小型检索索引/词典资产 (均 <20MB)
+!data/processed/
+data/processed/*
+!data/processed/taxonomy/
+!data/processed/atlas_lookup/
+data/processed/taxonomy/*
+!data/processed/taxonomy/*
+data/processed/atlas_lookup/*
+!data/processed/atlas_lookup/morphospecies_index.json
 nohup.out
 
 # Secrets / env

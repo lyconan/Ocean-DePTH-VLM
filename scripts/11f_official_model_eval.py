@@ -40,7 +40,8 @@ WEIGHTS = os.path.join(EXT_DIR, "mbari_315k_yolov8.pt")
 CFG_YAML = os.path.join(EXT_DIR, "mbari_315k_config.yaml")
 MAP_JSON = os.path.join(EXT_DIR, "mbari_315k_concept_class.json")
 OUT_JSON = os.path.join(ES_DIR, "11f_official_model_report.json")
-VAL_DIR = "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet"
+VAL_DIR = os.environ.get(
+    "DEPTH_VAL_DIR", "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet")
 
 DEVICE = os.environ.get("DEVICE", "cuda:1")
 CONF_COLLECT = 0.01
@@ -49,14 +50,8 @@ IOU_THR = 0.5
 CHUNK = 16
 SAVE_EVERY = 200
 
-YOLO_CLASSES = ["Octocorallia", "Malacostraca", "Holothuroidea", "Hexacorallia",
-                "Hexactinellida", "Actinopterygii", "Echinoidea", "Asteroidea",
-                "Hydrozoa", "Polychaeta", "Demospongiae", "Cephalopoda", "Bivalvia",
-                "Scyphozoa", "Crinoidea", "Elasmobranchii", "Gastropoda", "Ophiuroidea",
-                "Thaliacea", "Appendicularia", "Tentaculata", "Ascidiacea", "Nuda",
-                "Thecostraca", "Myxini", "Rhynchonellata", "Holocephali", "Sagittoidea",
-                "Clitellata", "Pycnogonida", "Enteropneusta", "Gymnolaemata",
-                "Polyplacophora", "Other"]
+sys.path.insert(0, os.path.join(BASE, "scripts"))
+from utils.yolo34_classes import YOLO_CLASSES  # 34 纲类别表 (单一事实来源, 见 utils/yolo34_classes.py)
 
 # WoRMS 新分类与我们 34 纲体系的 rank 差异别名 (norm 后小写)
 ALIAS = {"teleostei": "actinopterygii", "actinopteri": "actinopterygii",

@@ -1,0 +1,51 @@
+# =============================================================================
+# Ocean-DePTH-VLM 瘦身推理镜像 (<10GB)
+#
+# 用途: 运行检测(YOLO)+嵌入(BioCLIP v2)+向量检索(Neo4j) 全链路推理脚本,
+#       不包含训练依赖与数据/权重 (权重经 deploy/download_assets.sh 落盘后挂载)。
+#
+# 构建 (仓库根目录执行):
+#   docker build -f deploy/Dockerfile.infer -t lyconan/depth-vlm-infer:v0.1 .
+#
+# 运行 (推荐用 deploy/docker-compose.yml 的 infer profile):
+#   docker compose --profile infer run --rm infer python scripts/setup/verify_install.py
+#
+# 镜像体积构成: pytorch 2.1 runtime 基础镜像 ~5.5GB + 推理依赖 ~2-3GB
+# =============================================================================
+FROM pytorch/pytorch:2.1-cuda12.1-cudnn8-runtime
+
+# 声明默认连接参数 (compose/运行时可覆盖)
+ENV NEO4J_URI=bolt://neo4j:7687 \
+    NEO4J_USER=neo4j \
+    NEO4J_PASSWORD=password \
+    DEPTH_WORK=/work \
+    DEPTH_EXP=/exp \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /work
+
+# 仅装推理链路依赖 (torch/torchvision 由基础镜像自带):
+#   ultralytics      YOLO11 检测
+#   open_clip_torch  BioCLIP 2.5 (ViT-H/14) 模型加载
+#   timm             open_clip 视觉塔后端
+#   peft             LoRA v2 微调适配器加载 (utils/bioclip_embed.py)
+#   neo4j            图数据库驱动 (向量索引检索)
+#   h5py/tqdm/numpy/pillow 数据与工具
+RUN pip install --no-cache-dir \
+        ultralytics \
+        open_clip_torch \
+        timm \
+        peft \
+        neo4j \
+        pillow \
+        numpy \
+        tqdm \
+        h5py
+
+# 代码进镜像; 数据/权重不上镜像 (挂载仓库根目录到 /work 即可补齐)
+COPY scripts/ /work/scripts/
+COPY utils/   /work/utils/
+COPY config/  /work/config/
+
+# 容器默认即交互 bash, 也可直接覆写命令跑脚本
+ENTRYPOINT ["bash"]

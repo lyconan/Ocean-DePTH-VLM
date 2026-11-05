@@ -35,7 +35,8 @@ WEIGHTS = os.path.join(BASE, "runs/detect/yolo11m_class34-2/weights/best.pt")
 YOLO_CACHE = os.path.join(BASE, "data/processed/eval_subset/.11c_yolo_cache.json")
 E2E_CACHE = os.path.join(BASE, "data/processed/eval_subset/.11c_e2e_cache.json")
 OUT_JSON = os.path.join(BASE, "data/processed/eval_subset/11c_yolo_e2e_report.json")
-VAL_DIR = "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet"
+VAL_DIR = os.environ.get(
+    "DEPTH_VAL_DIR", "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet")
 
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://172.17.0.1:7687")
 NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
@@ -64,14 +65,7 @@ def parse_objects(txt):
     return out
 
 # YOLO 34纲 -> 生物真值纲名同形; 真值纲不在 33 生物纲内视为 Other
-YOLO_CLASSES = ["Octocorallia", "Malacostraca", "Holothuroidea", "Hexacorallia",
-                "Hexactinellida", "Actinopterygii", "Echinoidea", "Asteroidea",
-                "Hydrozoa", "Polychaeta", "Demospongiae", "Cephalopoda", "Bivalvia",
-                "Scyphozoa", "Crinoidea", "Elasmobranchii", "Gastropoda", "Ophiuroidea",
-                "Thaliacea", "Appendicularia", "Tentaculata", "Ascidiacea", "Nuda",
-                "Thecostraca", "Myxini", "Rhynchonellata", "Holocephali", "Sagittoidea",
-                "Clitellata", "Pycnogonida", "Enteropneusta", "Gymnolaemata",
-                "Polyplacophora", "Other"]
+from utils.yolo34_classes import YOLO_CLASSES  # 34 纲类别表 (单一事实来源, 见 utils/yolo34_classes.py)
 
 
 def atomic_json(path, obj):

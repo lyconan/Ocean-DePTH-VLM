@@ -43,7 +43,8 @@ C_1920 = os.path.join(ES_DIR, ".11c_yolo_cache_1920.json")
 E2E_CACHE = os.path.join(ES_DIR, ".11c2_e2e_cache.json")
 RAW_CACHE = os.path.join(ES_DIR, ".11d_raw_cache.json")
 OUT_JSON = os.path.join(ES_DIR, "11d_class_prior_report.json")
-VAL_DIR = "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet"
+VAL_DIR = os.environ.get(
+    "DEPTH_VAL_DIR", "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet")
 
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://172.17.0.1:7687")
 NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
@@ -61,14 +62,7 @@ BOX_RE = re.compile(
     r"<xmin>\s*(\d+)\s*</xmin>\s*<ymin>\s*(\d+)\s*</ymin>\s*"
     r"<xmax>\s*(\d+)\s*</xmax>\s*<ymax>\s*(\d+)\s*</ymax>", re.S)
 
-YOLO_CLASSES = ["Octocorallia", "Malacostraca", "Holothuroidea", "Hexacorallia",
-                "Hexactinellida", "Actinopterygii", "Echinoidea", "Asteroidea",
-                "Hydrozoa", "Polychaeta", "Demospongiae", "Cephalopoda", "Bivalvia",
-                "Scyphozoa", "Crinoidea", "Elasmobranchii", "Gastropoda", "Ophiuroidea",
-                "Thaliacea", "Appendicularia", "Tentaculata", "Ascidiacea", "Nuda",
-                "Thecostraca", "Myxini", "Rhynchonellata", "Holocephali", "Sagittoidea",
-                "Clitellata", "Pycnogonida", "Enteropneusta", "Gymnolaemata",
-                "Polyplacophora", "Other"]
+from utils.yolo34_classes import YOLO_CLASSES  # 34 纲类别表 (单一事实来源, 见 utils/yolo34_classes.py)
 
 
 def parse_objects(txt):

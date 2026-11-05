@@ -1,0 +1,74 @@
+# =============================================================================
+# Ocean-DePTH-VLM 一键部署编排
+#
+# 用法:
+#   1) 只起知识图谱库:      docker compose up -d neo4j
+#   2) 起库 + 推理容器:     docker compose --profile infer up -d --build
+#   3) 冒烟验证:            docker compose --profile infer run --rm infer \
+#                             python scripts/setup/verify_install.py
+#
+# 首次使用请先执行 deploy/download_assets.sh 下载模型权重到 data/models。
+# =============================================================================
+services:
+
+  # ---------- 知识图谱库 (Morphospecies / EntryImage / 向量索引) ----------
+  neo4j:
+    image: neo4j:5-community
+    container_name: depth_vlm_neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"   # HTTP 浏览器界面 http://localhost:7474
+      - "7687:7687"   # Bolt 协议 (脚本经 NEO4J_URI 连接)
+    environment:
+      # 认证: 用户名 neo4j / 密码 password (与脚本默认值一致, 生产环境请修改)
+      NEO4J_AUTH: neo4j/password
+      # 内存预算 ~2G: heap 1G + pagecache 512m + JVM 开销
+      NEO4J_server_memory_heap_initial__size: "512m"
+      NEO4J_server_memory_heap_max__size: "1G"
+      NEO4J_server_memory_pagecache_size: "512m"
+    volumes:
+      - neo4j_data:/data        # 图数据持久化 (导入一次长期使用)
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password 'RETURN 1 AS ok'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ---------- 推理容器 (可选, profile=infer 时才启动) ----------
+  infer:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.infer
+    image: lyconan/depth-vlm-infer:v0.1
+    profiles: ["infer"]           # 显式 --profile infer 才启动
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    working_dir: /work
+    environment:
+      NEO4J_URI: bolt://neo4j:7687     # 容器网络内直达 neo4j 服务
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: password
+      NEO4J_PASS: password             # 兼容旧脚本 (11c 系列读 NEO4J_PASS)
+      DEPTH_WORK: /work                # 仓库根目录挂载点
+      DEPTH_EXP: /exp                  # 基准/中间产物输出目录
+      # DEPTH_VAL_DIR: /data/FathomNet # 场景图目录 (跑盲测基准时取消注释)
+      # YOLO_WEIGHTS: runs/detect/yolo11m_class34-2/weights/best.pt
+    volumes:
+      - ..:/work          # 仓库根目录 (代码 + data/models 权重)
+      - ../exp:/exp       # 运行输出 (盲测报告/缓存)
+      # - /path/to/FathomNet:/data/FathomNet:ro   # 场景图目录 (可选)
+    shm_size: "8gb"       # DataLoader 共享内存
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all          # 多卡环境可改 count: 1 或 device_ids
+              capabilities: [gpu]
+
+volumes:
+  neo4j_data:
+  neo4j_logs:

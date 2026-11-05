@@ -10,13 +10,14 @@
   3. 安全环: 若某 mid 因此在库中清零, 其 uuid 退回画廊 (该 mid 不可测但不破坏库)
   4. 删除 EntryImage 节点 -> 重建向量索引; 删除前备份嵌入 (可 --restore 一键恢复)
 
-输入: /work/data/processed/fathomnet_expansion/boxes/, /exp/meta.jsonl + emb_ft2.f32
-输出: /exp/blindtest/manifest.json + removed_backup.npz
+输入: $DEPTH_WORK/data/processed/fathomnet_expansion/boxes/, $DEPTH_EXP/meta.jsonl + emb_ft2.f32
+输出: $DEPTH_EXP/blindtest/manifest.json + removed_backup.npz
 运行: docker run --rm --gpus '"device=0"' --network docker_default --shm-size 8g \
         -v /tmp/exp:/exp -v $WS:/work:ro \
         -v /root/.cache/huggingface:/root/.cache/huggingface:ro \
         yolo34_train:v1 env HF_HUB_OFFLINE=1 PYTHONPATH=/exp/pylibs \
         /root/miniconda3/envs/vllm/bin/python /work/scripts/36_build_blindtest.py
+环境变量: NEO4J_URI/NEO4J_USER/NEO4J_PASSWORD, DEPTH_WORK, DEPTH_EXP (均有原值作默认)
 """
 import os
 import json
@@ -24,10 +25,13 @@ import random
 import numpy as np
 from neo4j import GraphDatabase
 
-URI = "bolt://depth_vlm_neo4j:7687"
-AUTH = ("neo4j", "password")
-BOX_DIR = "/work/data/processed/fathomnet_expansion/boxes"
-OUT_DIR = "/exp/blindtest"
+WORK = os.environ.get("DEPTH_WORK", "/work")
+EXP = os.environ.get("DEPTH_EXP", "/exp")
+URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+AUTH = (os.environ.get("NEO4J_USER", "neo4j"),
+        os.environ.get("NEO4J_PASSWORD", "password"))
+BOX_DIR = os.path.join(WORK, "data/processed/fathomnet_expansion/boxes")
+OUT_DIR = os.path.join(EXP, "blindtest")
 DIM = 1024
 SEED = 42
 
@@ -75,7 +79,7 @@ def main(restore=False):
     # 1. 扫描框 + 库清单
     recs = scan_boxes()
     print(f"FN val 框: {len(recs)} 张", flush=True)
-    meta = [json.loads(l) for l in open("/exp/meta.jsonl")]
+    meta = [json.loads(l) for l in open(os.path.join(EXP, "meta.jsonl"))]
     lib_ids = [m["id"] for m in meta]
     lib_set = set(lib_ids)
     missing = [r[2] for r in recs if r[2] not in lib_set]
@@ -132,7 +136,8 @@ def main(restore=False):
 
     # 4. 备份嵌入 (可恢复)
     idx_of = {m["id"]: i for i, m in enumerate(meta)}
-    mat = np.fromfile("/exp/emb_ft2.f32", dtype=np.float32).reshape(-1, DIM)
+    mat = np.fromfile(os.path.join(EXP, "emb_ft2.f32"),
+                      dtype=np.float32).reshape(-1, DIM)
     keep = [i for i, x in enumerate(lib_ids) if x in set(bl)]
     np.savez(f"{OUT_DIR}/removed_backup.npz",
              ids=np.array([lib_ids[i] for i in keep]),

@@ -19,7 +19,8 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SUBSET_JSON = os.path.join(BASE, "data/processed/eval_subset/fathomnet_test_subset.json")
 MSP_JSON = os.path.join(BASE, "data/processed/atlas_lookup/morphospecies_index.json")
 WEIGHTS = os.path.join(BASE, "runs/detect/yolo11m_class34-2/weights/best.pt")
-VAL_DIR = "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet"
+VAL_DIR = os.environ.get(
+    "DEPTH_VAL_DIR", "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet")
 ES_DIR = os.path.join(BASE, "data/processed/eval_subset")
 DEVICE = "cuda:1"
 IOU_THR = 0.5
@@ -36,14 +37,8 @@ BOX_RE = re.compile(
     r"<xmin>\s*(\d+)\s*</xmin>\s*<ymin>\s*(\d+)\s*</ymin>\s*"
     r"<xmax>\s*(\d+)\s*</xmax>\s*<ymax>\s*(\d+)\s*</ymax>", re.S)
 
-YOLO_CLASSES = ["Octocorallia", "Malacostraca", "Holothuroidea", "Hexacorallia",
-                "Hexactinellida", "Actinopterygii", "Echinoidea", "Asteroidea",
-                "Hydrozoa", "Polychaeta", "Demospongiae", "Cephalopoda", "Bivalvia",
-                "Scyphozoa", "Crinoidea", "Elasmobranchii", "Gastropoda", "Ophiuroidea",
-                "Thaliacea", "Appendicularia", "Tentaculata", "Ascidiacea", "Nuda",
-                "Thecostraca", "Myxini", "Rhynchonellata", "Holocephali", "Sagittoidea",
-                "Clitellata", "Pycnogonida", "Enteropneusta", "Gymnolaemata",
-                "Polyplacophora", "Other"]
+sys.path.insert(0, os.path.join(BASE, "scripts"))
+from utils.yolo34_classes import YOLO_CLASSES  # 34 纲类别表 (单一事实来源, 见 utils/yolo34_classes.py)
 
 
 def parse_objects(txt):

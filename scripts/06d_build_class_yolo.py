@@ -2,8 +2,8 @@
 """
 06d_build_class_yolo.py — FathomNet 2553 细类 → 34 纲级 YOLO 检测数据集
 
-数据源 (只读, 不修改原目录):
-  /mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet/
+数据源 (只读, 不修改原目录, 可用环境变量 FATHOMNET_ROOT 覆盖):
+  $FATHOMNET_ROOT/
     Train/*.png + *.txt (YOLO格式, 旧2553类id)   132,924 张
     Val/*.png + *.txt                             33,236 张
     class_mapping.json  {concept_name: old_id}
@@ -28,7 +28,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FN = Path('/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet')
+FN = Path(os.environ.get(
+    'FATHOMNET_ROOT', '/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet'))
 CAND = ROOT / 'data/processed/fathomnet_expansion/fathomnet_candidates.json'
 OUT = ROOT / 'data/processed/fathomnet_class_yolo'
 

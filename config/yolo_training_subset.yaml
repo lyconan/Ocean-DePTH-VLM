@@ -1,6 +1,9 @@
 # YOLO11训练配置 - APSMA对齐的深海底栖生物检测
 # 类别来自APSMA分类体系树对齐
-path: /mnt/oneocean_200TBnas_feitian/oneastronomy/lishaojie/Ocean-DePTH-VLM/data/processed/apsma_yolo_subset
+# path 为相对占位: 指向数据集根目录 (含 images/{train,val,test})。
+# 官方 34 纲数据集由 scripts/06d_build_class_yolo.py 生成于
+# ./data/processed/fathomnet_class_yolo, 或下载后解包到该目录再修改本字段。
+path: ./data/fathomnet_class_yolo
 train: images/train
 val: images/val
 test: images/test

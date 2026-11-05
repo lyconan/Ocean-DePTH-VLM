@@ -2,15 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 38_blindtest_detect_retrieval.py — 盲测集 检测+粗类别+精细检索 基准 (无VLM)
-数据: data/processed/blindtest/manifest.json (1,744 盲测场景, 库中已无同源图)
-场景图: /mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet/Val/<uuid>.png
+数据: $DEPTH_EXP/blindtest/manifest.json (1,744 盲测场景, 库中已无同源图)
+场景图: $DEPTH_VAL_DIR/<uuid>.png (默认: 源工程 FathomNet/Val)
 GT:     同目录 <uuid>.xml (concept 级框标注, concept->mid 经 morphospecies_index)
         同目录 <uuid>.txt (34纲 YOLO 标注, 作粗类别GT, 与xml框按IoU配准)
 管线:   YOLO双路(960+TTA ∪ 1920, conf0.05/nms0.55) -> 检出框与GT贪心IoU0.5匹配
         -> 匹配框 tight裁剪 -> BioCLIP v2 嵌入+翻转TTA -> 向量索引 top-10
         -> mid聚合 -> 物种 strict top-1/5/10 + 属级 top-1/5/10
-输出:   /exp/blindtest/e2e_report.json + per_object.jsonl
+输出:   $DEPTH_EXP/blindtest/e2e_report.json + per_object.jsonl
 运行:   容器 GPU0 (同36号脚本启动方式, 需挂载场景图目录)
+环境变量: NEO4J_URI/NEO4J_USER/NEO4J_PASSWORD, DEPTH_WORK, DEPTH_EXP,
+          DEPTH_VAL_DIR, YOLO_WEIGHTS (均有原值作默认)
 """
 import os
 import sys
@@ -19,18 +21,22 @@ import time
 import pickle
 import xml.etree.ElementTree as ET
 
-sys.path.insert(0, "/work/scripts")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from PIL import Image
 from neo4j import GraphDatabase
 
-VAL_DIR = "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet/Val"
-MSP_JSON = "/work/data/processed/atlas_lookup/morphospecies_index.json"
-MANIFEST = "/exp/blindtest/manifest.json"
-OUT_DIR = "/exp/blindtest"
+WORK = os.environ.get("DEPTH_WORK", "/work")
+EXP = os.environ.get("DEPTH_EXP", "/exp")
+VAL_DIR = os.environ.get(
+    "DEPTH_VAL_DIR", "/mnt/oneocean_200TBnas_feitian/opc-03/Sea_Data/FathomNet/Val")
+MSP_JSON = os.path.join(WORK, "data/processed/atlas_lookup/morphospecies_index.json")
+MANIFEST = os.path.join(EXP, "blindtest/manifest.json")
+OUT_DIR = os.path.join(EXP, "blindtest")
 IOU_MATCH = 0.5
 TOPK = 10
-YOLO_WEIGHTS = "runs/detect/yolo11m_class34-2/weights/best.pt"
+YOLO_WEIGHTS = os.environ.get(
+    "YOLO_WEIGHTS", "runs/detect/yolo11m_class34-2/weights/best.pt")
 CF_W = float(os.environ.get("CF_W", "0.5"))  # cfusion 图像分权重 (质心分权重=1-CF_W)
 QE = os.environ.get("QE", "0") == "1"  # P2: Query Expansion 开关
 
@@ -113,7 +119,8 @@ def main():
     print(f"concept映射: {len(concept2mid)}", flush=True)
 
     # WoRMS纲别 -> 模型34类 别名映射 (data/processed/taxonomy/yolo34_class_alias_map.json)
-    _alias_raw = json.load(open("/work/data/processed/taxonomy/yolo34_class_alias_map.json"))
+    _alias_raw = json.load(open(os.path.join(
+        WORK, "data/processed/taxonomy/yolo34_class_alias_map.json")))
     CLASS_ALIAS = {k: v for k, v in _alias_raw.items() if not k.startswith("_")}
 
     # mid -> 纲别 GT (lineage.class, 不依赖 txt 类id)
@@ -132,14 +139,17 @@ def main():
     print(f"纲别映射: {len(mid2class)}", flush=True)
 
     # mid -> genus (Neo4j)
-    drv = GraphDatabase.driver("bolt://depth_vlm_neo4j:7687", auth=("neo4j", "password"))
+    _uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    _auth = (os.environ.get("NEO4J_USER", "neo4j"),
+             os.environ.get("NEO4J_PASSWORD", "password"))
+    drv = GraphDatabase.driver(_uri, auth=_auth)
     with drv.session() as s:
         mid2genus = {r["mid"]: (r["genus"] or "") for r in s.run(
             "MATCH (ms:Morphospecies) RETURN ms.morphospecies_id AS mid, ms.genus AS genus")}
     print(f"genus映射: {len(mid2genus)}", flush=True)
 
     # mid 质心旁路 (2,638个, 已按盲测剔除后的库刷新: centroids_v2.npz)
-    _npz = np.load("/work/data/experiments/ft_20261102/centroids_v2.npz")
+    _npz = np.load(os.path.join(WORK, "data/experiments/ft_20261102/centroids_v2.npz"))
     CEN_C = _npz["C"].astype("float32")
     CEN_MIDS = [str(m) for m in _npz["mids"]]
     CEN_IDX = {m: i for i, m in enumerate(CEN_MIDS)}
@@ -177,7 +187,7 @@ def main():
     # 检测框缓存: sig 不匹配 (换权重/conf/路径) 自动重建
     DET_SIG = {"weights": YOLO_WEIGHTS, "conf": 0.05, "iou_nms": 0.55,
                "paths": "960tta+1920"}
-    DET_CACHE_PATH = "/exp/blindtest/det_cache.pkl"
+    DET_CACHE_PATH = os.path.join(EXP, "blindtest/det_cache.pkl")
     DET_CACHE = {}
     if os.path.exists(DET_CACHE_PATH):
         try:
@@ -194,7 +204,7 @@ def main():
     scene_items = [(u, sc) for u, sc in sorted(scenes.items())
                    if os.path.exists(os.path.join(VAL_DIR, u + ".png"))]
     WIN = 24
-    CACHE_PATH = "/exp/blindtest/emb_cache.npz"  # E3: 键=uuid|box, 值=TTA归一化嵌入
+    CACHE_PATH = os.path.join(EXP, "blindtest/emb_cache.npz")  # E3: 键=uuid|box, 值=TTA归一化嵌入
     CACHE = {}
     if os.path.exists(CACHE_PATH):
         _c = np.load(CACHE_PATH)
