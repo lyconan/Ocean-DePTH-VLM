@@ -3,10 +3,10 @@
 # download_assets.sh — 从 ModelScope (魔搭) 下载推理所需模型权重/数据资产
 #
 # 下载内容:
-#   模型仓库 (MODEL_REPO, ~300MB):
+#   模型仓库 (MODEL_REPO, ~265MB):
 #     yolo11m_class34_best.pt   34 纲 YOLO 检测权重 (161MB)
 #                               -> runs/detect/yolo11m_class34-2/weights/best.pt
-#     bioclip_lora_v2/          BioCLIP 2.5 LoRA v2 适配器 (117MB)
+#     bioclip_lora_v2/          BioCLIP 2.5 LoRA v2 适配器 (84MB)
 #                               -> data/models/bioclip_lora/lora_adapter_v2/
 #     centroids_v2.npz          2,638 形态种质心 (检索融合用)
 #                               -> data/experiments/ft_20261102/centroids_v2.npz
@@ -22,13 +22,13 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# TODO(发布者): 仓库上传后, 把下面的占位 repo id 改成实际地址, 或用环境变量覆盖
+# 默认仓库已发布; 如需镜像/私有副本, 用环境变量覆盖:
 #   export MODELSCOPE_MODEL_REPO=<org>/<model-repo>
 #   export MODELSCOPE_DATASET_REPO=<org>/<dataset-repo>
 # 详见 docs/03_distribution.md 的发布清单。
 # ---------------------------------------------------------------------------
-MODEL_REPO="${MODELSCOPE_MODEL_REPO:-YOUR_MODELSCOPE_USERNAME/depth-vlm-assets}"
-DATASET_REPO="${MODELSCOPE_DATASET_REPO:-YOUR_MODELSCOPE_USERNAME/depth-vlm-dataset}"
+MODEL_REPO="${MODELSCOPE_MODEL_REPO:-ConanLee126/depth-vlm-assets}"
+DATASET_REPO="${MODELSCOPE_DATASET_REPO:-ConanLee126/depth-vlm-dataset}"
 # ---------------------------------------------------------------------------
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -44,8 +44,8 @@ die()  { printf '\033[1;31m[download_assets] ERROR:\033[0m %s\n' "$*" >&2; exit 
 trap 'rm -rf "$STAGE"' EXIT
 
 log "仓库根目录: $ROOT"
-log "模型仓库:   $MODEL_REPO"
-[[ $WITH_DATASET -eq 1 ]] && log "数据集仓库: $DATASET_REPO (~365GB, 确认磁盘空间充足)"
+log "模型仓库:   $MODEL_REPO (~265MB)"
+[[ $WITH_DATASET -eq 1 ]] && log "数据集仓库: $DATASET_REPO (~365GB, 确认磁盘空间充足; 数据集仓库后续上传)"
 
 # --- 0. modelscope CLI ---
 if ! python3 -c "import modelscope" >/dev/null 2>&1; then

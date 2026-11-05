@@ -26,8 +26,8 @@ docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
 ```bash
 git clone <repo-url> Ocean-DePTH-VLM && cd Ocean-DePTH-VLM
 
-# 下载推理权重 (~300MB: YOLO best.pt / BioCLIP 2.5 LoRA v2 / 质心 npz)
-# 发布前请先在脚本顶部把占位 repo id 改成实际魔搭仓库 (TODO 注释处)
+# 下载推理权重 (~265MB: YOLO best.pt / BioCLIP 2.5 LoRA v2 / 质心 npz)
+# 默认从魔搭仓库 ConanLee126/depth-vlm-assets 拉取, 可用环境变量 MODELSCOPE_MODEL_REPO 覆盖
 bash deploy/download_assets.sh
 
 # 可选: 下载 365GB 训练数据集 (8 个 tar 分片, 后续上传; 解包到 data/processed/fathomnet_class_yolo)

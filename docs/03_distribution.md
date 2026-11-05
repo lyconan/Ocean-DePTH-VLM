@@ -5,42 +5,58 @@
 
 ---
 
-## 1. 魔搭模型仓库 (`<org>/depth-vlm-assets`, ~300MB)
+## 1. 魔搭模型仓库 (`ConanLee126/depth-vlm-assets`, ~265MB) — **已发布** (2026-11-05)
+
+仓库地址: https://modelscope.cn/models/ConanLee126/depth-vlm-assets (公开可读, 匿名可下载, License: Apache-2.0)
 
 仓库内容 (文件名与 `deploy/download_assets.sh` 的落位逻辑对应, 勿改名):
 
 | 仓库内路径 | 内容 | 大小 |
 |---|---|---|
 | `yolo11m_class34_best.pt` | 34 纲 YOLO11m 检测权重 (即 `runs/detect/yolo11m_class34-2/weights/best.pt`) | 161MB |
-| `bioclip_lora_v2/` | BioCLIP 2.5 LoRA v2 适配器 (即 `data/models/bioclip_lora/lora_adapter_v2/` 整目录) | 117MB |
-| `centroids_v2.npz` | 2,638 形态种质心矩阵 (`C` + `mids`) | ~20MB |
-| `atlas_lookup/morphospecies_index.json` | 形态种主索引 (与仓库内 `data/processed/atlas_lookup/` 同源, 冗余分发便于离线) | 7.4MB |
-| `taxonomy/yolo34_class_alias_map.json` | WoRMS 纲别 → 34 类别名映射 | <1KB |
-| `README.md` | 模型卡 (指标、环境、引用方式) | — |
+| `bioclip_lora_v2/` | BioCLIP 2.5 LoRA v2 适配器 (即 `data/models/bioclip_lora/lora_adapter_v2/` 整目录) | 84MB |
+| `centroids_v2.npz` | 2,638 形态种质心矩阵 (`C` + `mids` + `cnt`) | 11MB |
+| `atlas_lookup/morphospecies_index.json` | 形态种主索引 (与仓库内 `data/processed/atlas_lookup/` 同源, 冗余分发便于离线) | 7.5MB |
+| `taxonomy/` | WoRMS 纲别→34 类别名映射与中文物种名对照 (6 个文件, 含 `yolo34_class_alias_map.json`) | 0.9MB |
+| `configuration.json` | ModelScope 仓库元数据 (上传 SDK 自动生成) | <1KB |
+| `README.md` | 模型卡 (文件用途、基座标注 BioCLIP 2.5 ViT-H/14、下载方法、指标、许可) | — |
 
 > 注: `*.pt/*.npz` 已被仓库 `.gitignore` 排除, 因此必须经模型仓库分发;
 > 两个 json 索引已随代码仓库分发, 模型仓库内为冗余备份。
 > BioCLIP 2.5 基座 (ViT-H/14, `imageomics/bioclip-2.5-vith14`, ~2.5GB) **不随模型仓库分发**,
-> 首次运行时从 HuggingFace 自动下载 (支持 `HF_HUB_OFFLINE=1` 离线); 仓库只分发 LoRA v2 适配器。
+> 首次运行时从 HuggingFace 自动下载 (支持 `HF_HUB_OFFLINE=1` 离线); 仓库只分发 LoRA v2 适配器 (模型卡中已标注基座)。
 
-上传命令:
+下载验证 (2026-11-05, 匿名无 token): 仓库文件列表可匿名读取;
+`modelscope download` 拉取 README/质心 npz/别名映射大小与源一致;
+对 `yolo11m_class34_best.pt` 发起 Range 请求返回 206 且首字节为合法 PyTorch zip 头。
+
+用户下载命令:
+
+```bash
+pip install modelscope
+# 整仓下载
+modelscope download --model ConanLee126/depth-vlm-assets --local_dir ./depth-vlm-assets
+# 或一键下载并自动落位
+bash deploy/download_assets.sh
+```
+
+发布者增量同步命令 (首传已完成, 后续改动资产后重跑对应行即可):
 
 ```bash
 pip install modelscope
 modelscope login --token <YOUR_MS_TOKEN>
 
-# 整目录上传 (推荐, 首传后增量同步)
-modelscope upload <org>/depth-vlm-assets yolo11m_class34_best.pt --repo-type model
-modelscope upload <org>/depth-vlm-assets bioclip_lora_v2/ --repo-type model
-modelscope upload <org>/depth-vlm-assets centroids_v2.npz --repo-type model
-modelscope upload <org>/depth-vlm-assets atlas_lookup/ --repo-type model
-modelscope upload <org>/depth-vlm-assets taxonomy/ --repo-type model
+modelscope upload ConanLee126/depth-vlm-assets yolo11m_class34_best.pt --repo-type model
+modelscope upload ConanLee126/depth-vlm-assets bioclip_lora_v2/ --repo-type model
+modelscope upload ConanLee126/depth-vlm-assets centroids_v2.npz --repo-type model
+modelscope upload ConanLee126/depth-vlm-assets atlas_lookup/ --repo-type model
+modelscope upload ConanLee126/depth-vlm-assets taxonomy/ --repo-type model
 ```
 
-发布者最后一步: 把 `deploy/download_assets.sh` 顶部的
-`MODELSCOPE_MODEL_REPO` 占位符改为 `<org>/depth-vlm-assets`。
+`deploy/download_assets.sh` 顶部的 `MODELSCOPE_MODEL_REPO` 默认值已回填为
+`ConanLee126/depth-vlm-assets` (环境变量可覆盖)。
 
-## 2. 魔搭数据集仓库 (`<org>/depth-vlm-dataset`, ~365GB) — **后续上传**
+## 2. 魔搭数据集仓库 (`ConanLee126/depth-vlm-dataset`, ~365GB) — **后续上传**
 
 内容: 34 纲 YOLO 检测训练集 `fathomnet_class_yolo/` (images 符号链接已解包为实文件)。
 
@@ -58,7 +74,7 @@ md5sum data/processed/fathomnet_class_yolo_part*.tar > fathomnet_class_yolo.md5
 上传:
 
 ```bash
-modelscope upload <org>/depth-vlm-dataset fathomnet_class_yolo_part00.tar --repo-type dataset
+modelscope upload ConanLee126/depth-vlm-dataset fathomnet_class_yolo_part00.tar --repo-type dataset
 # ... 依次上传 part01..part07 与 fathomnet_class_yolo.md5
 ```
 
@@ -107,9 +123,9 @@ FathomNet 引用格式 (模型卡与论文中标注):
 
 ## 5. 发布前检查项
 
-- [ ] 模型仓库 6 项资产上传完毕, 用干净目录跑 `deploy/download_assets.sh` 验证落位
+- [x] 模型仓库资产已上传至 `ConanLee126/depth-vlm-assets` (2026-11-05, 265MB/14 文件, 匿名下载验证通过); 干净目录跑 `deploy/download_assets.sh` 验证落位仍建议发布前做一次
 - [ ] 数据集 8 分片 md5 校验通过, 下载端 `--with-dataset` 解包成功 (**后续上传, 暂未就绪**)
 - [ ] Docker Hub 镜像拉取 + `scripts/setup/verify_install.py` 6 步全 PASS
-- [ ] `deploy/download_assets.sh` 占位 repo id 已替换为真实地址
+- [x] `deploy/download_assets.sh` 占位 repo id 已替换为真实地址 (`ConanLee126/depth-vlm-assets`)
 - [ ] 仓库根 `LICENSE` (Apache-2.0) 与数据声明就位
 - [ ] `deploy/README.md` 指标表与最新定版一致 (cfusion 49.6 / 68.9 / 72.6)
