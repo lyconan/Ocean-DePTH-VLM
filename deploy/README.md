@@ -12,7 +12,7 @@
 | GPU | NVIDIA ≥ 8GB 显存 (推荐 24GB+; 38 号盲测跑分建议 A100/4090 级) |
 | 驱动 | NVIDIA Driver ≥ 535 (CUDA 12.1 兼容), `nvidia-container-toolkit` 已安装 |
 | Docker | Docker ≥ 24, Docker Compose v2 (`docker compose version` 可用) |
-| 磁盘 | ≥ 50GB (镜像 ~10GB + 权重 ~1GB; 若下载训练数据集另需 ~365GB) |
+| 磁盘 | ≥ 80GB (镜像 ~27GB + 权重 ~1GB; 若下载训练数据集另需 ~365GB) |
 | Python (宿主机直跑时) | ≥ 3.10, 见根目录 `requirements.txt` |
 
 验证 GPU 对容器可见:
@@ -25,6 +25,12 @@ docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
 
 ```bash
 git clone <repo-url> Ocean-DePTH-VLM && cd Ocean-DePTH-VLM
+
+# 路线一 (推荐): 拉取预装全部依赖的 Docker 镜像 (~27GB, 已发布 Docker Hub)
+docker pull conanlee126/depth-vlm-train:v1
+# 后续 infer 相关命令将 deploy/docker-compose.yml 中 build 段替换为 image: conanlee126/depth-vlm-train:v1 即可
+
+# 路线二: 本地构建 (见 docs/03_distribution.md)
 
 # 下载推理权重 (~265MB: YOLO best.pt / BioCLIP 2.5 LoRA v2 / 质心 npz)
 # 默认从魔搭仓库 ConanLee126/depth-vlm-assets 拉取, 可用环境变量 MODELSCOPE_MODEL_REPO 覆盖

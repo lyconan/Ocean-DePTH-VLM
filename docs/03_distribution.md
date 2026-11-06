@@ -80,21 +80,21 @@ modelscope upload ConanLee126/depth-vlm-dataset fathomnet_class_yolo_part00.tar 
 
 用户侧恢复: `bash deploy/download_assets.sh --with-dataset` (脚本内自动合并分片 + tar 解包)。
 
-## 3. Docker Hub (`lyconan/depth-vlm-infer:v0.1`)
+## 3. Docker Hub (`conanlee126/depth-vlm-train:v1`) — 已推送 (2026-11-06)
 
 ```bash
-# 构建 (仓库根目录执行; 瘦身推理镜像, 目标 <10GB)
-docker build -f deploy/Dockerfile.infer -t lyconan/depth-vlm-infer:v0.1 .
+# 拉取 (全量镜像 ~26.9GB, 含训练+推理全部依赖, 首推耗时 ~17h 国内出口带宽受限)
+docker pull conanlee126/depth-vlm-train:v1
 
-docker images lyconan/depth-vlm-infer          # 确认体积
-docker run --rm --gpus all lyconan/depth-vlm-infer:v0.1 python -c "import ultralytics, open_clip, neo4j; print('deps ok')"
-
-docker login
-docker push lyconan/depth-vlm-infer:v0.1
+docker run --rm --gpus all conanlee126/depth-vlm-train:v1 \
+    python -c "import ultralytics, open_clip, neo4j; print('deps ok')"
 ```
 
-镜像内只含 `scripts/ utils/ config/` 与 pip 依赖 — 不含数据与权重, 用户经
-`deploy/docker-compose.yml` 的 `infer` profile 挂载仓库目录使用。
+> 注: 当前镜像为 yolo34_train 训练环境全量打包 (26.9GB), 已满足推理与复现需求;
+> 瘦身推理镜像 (`Dockerfile.infer`, 目标 <10GB) 可后续按下方构建流程另行发布 v0.2。
+
+> 镜像不含数据集与推理权重 — 权重走魔搭 (`deploy/download_assets.sh`), 数据集走
+> `--with-dataset`; 使用时经 `deploy/docker-compose.yml` 的 `infer` profile 挂载仓库目录。
 
 ## 4. License 建议
 
