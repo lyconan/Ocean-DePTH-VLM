@@ -80,15 +80,20 @@ modelscope upload ConanLee126/depth-vlm-dataset fathomnet_class_yolo_part00.tar 
 
 用户侧恢复: `bash deploy/download_assets.sh --with-dataset` (脚本内自动合并分片 + tar 解包)。
 
-## 3. Docker Hub (`conanlee126/depth-vlm-train:v1`) — 已推送 (2026-11-06)
+## 3. Docker Hub (`conanlee126/depth-vlm-train:v1.1`) — 已推送 (v1: 2026-11-06 / v1.1: 2026-11-06)
 
 ```bash
 # 拉取 (全量镜像 ~26.9GB, 含训练+推理全部依赖, 首推耗时 ~17h 国内出口带宽受限)
-docker pull conanlee126/depth-vlm-train:v1
+docker pull conanlee126/depth-vlm-train:v1.1
 
-docker run --rm --gpus all conanlee126/depth-vlm-train:v1 \
-    python -c "import ultralytics, open_clip, neo4j; print('deps ok')"
+docker run --rm --gpus all conanlee126/depth-vlm-train:v1.1 \
+    python -c "import ultralytics, open_clip, neo4j, peft; print('deps ok')"
 ```
+
+> **v1.1 (2026-11-06)**: 修复 v1 缺陷 — 镜像内缺 `peft` (BioCLIP LoRA v2 适配器加载必需)。
+> v1 的容器内 pip 默认走中科大镜像源 (该网络环境不通) 导致安装静默失败; v1.1 改用
+> 官方源 `pypi.org` 安装 `peft 0.21.2` 后提交, 基础层与 v1 完全复用。
+> **新用户请一律使用 v1.1**; v1 保留但不再维护。
 
 > 注: 当前镜像为 yolo34_train 训练环境全量打包 (26.9GB), 已满足推理与复现需求;
 > 瘦身推理镜像 (`Dockerfile.infer`, 目标 <10GB) 可后续按下方构建流程另行发布 v0.2。

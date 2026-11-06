@@ -27,8 +27,8 @@ docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
 git clone <repo-url> Ocean-DePTH-VLM && cd Ocean-DePTH-VLM
 
 # 路线一 (推荐): 拉取预装全部依赖的 Docker 镜像 (~27GB, 已发布 Docker Hub)
-docker pull conanlee126/depth-vlm-train:v1
-# 后续 infer 相关命令将 deploy/docker-compose.yml 中 build 段替换为 image: conanlee126/depth-vlm-train:v1 即可
+docker pull conanlee126/depth-vlm-train:v1.1
+# 后续 infer 相关命令将 deploy/docker-compose.yml 中 build 段替换为 image: conanlee126/depth-vlm-train:v1.1 即可
 
 # 路线二: 本地构建 (见 docs/03_distribution.md)
 
