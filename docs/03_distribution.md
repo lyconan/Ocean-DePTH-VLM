@@ -56,12 +56,11 @@ modelscope upload ConanLee126/depth-vlm-assets taxonomy/ --repo-type model
 `deploy/download_assets.sh` 顶部的 `MODELSCOPE_MODEL_REPO` 默认值已回填为
 `ConanLee126/depth-vlm-assets` (环境变量可覆盖)。
 
-## 2. 魔搭数据集仓库 (`ConanLee126/depth-vlm-dataset`, ~365GB) — **后续上传**
+## 2. 魔搭数据集仓库 (`ConanLee126/depth-vlm-dataset`, ~365GB) — **已发布 (2026-11-08)**
 
 内容: 34 纲 YOLO 检测训练集 `fathomnet_class_yolo/` (images 符号链接已解包为实文件)。
 
-> 状态: **后续上传** — 训练数据集 (~365GB) 尚未上传至魔搭, 上传前模型仓库已可支撑
-> 全部推理与评测链路 (检测权重 / LoRA 适配器 / 质心 / 索引)。
+> 状态: **已发布** — part00~07 共 8 分片 (383.7GB) 已全部上传至魔搭, 远端文件大小逐片校验通过, 匿名可下载。
 
 打包为 8 个 tar 分片 (用仓库自带 `scripts/package_class_yolo.sh`, 默认 8 分片并行打包):
 
@@ -129,7 +128,7 @@ FathomNet 引用格式 (模型卡与论文中标注):
 ## 5. 发布前检查项
 
 - [x] 模型仓库资产已上传至 `ConanLee126/depth-vlm-assets` (2026-11-05, 265MB/14 文件, 匿名下载验证通过); 干净目录跑 `deploy/download_assets.sh` 验证落位仍建议发布前做一次
-- [ ] 数据集 8 分片 md5 校验通过, 下载端 `--with-dataset` 解包成功 (**后续上传, 暂未就绪**)
+- [ ] 数据集 8 分片 md5 校验通过, 下载端 `--with-dataset` 解包成功 (**分片已发布; md5 清单生成中**)
 - [ ] Docker Hub 镜像拉取 + `scripts/setup/verify_install.py` 6 步全 PASS
 - [x] `deploy/download_assets.sh` 占位 repo id 已替换为真实地址 (`ConanLee126/depth-vlm-assets`)
 - [ ] 仓库根 `LICENSE` (Apache-2.0) 与数据声明就位
