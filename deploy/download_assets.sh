@@ -95,7 +95,19 @@ else
     log "警告: 暂存区未找到 centroids_v2.npz (cfusion 变体将不可用)"
 fi
 
-# --- 5. 可选: 365GB 训练数据集 (8 个 tar 分片, 后续上传) ---
+# --- 5. 落位: Neo4j 图谱 dump (检索/元数据必需, ~458MB) ---
+NK_DST="$DATA_DIR/neo4j"
+NK_SRC="$(find "$STAGE" -maxdepth 2 -name 'neo4j.dump' | head -1)"
+if [[ -n "$NK_SRC" ]]; then
+    mkdir -p "$NK_DST"
+    install -m 644 "$NK_SRC" "$NK_DST/neo4j.dump"
+    log "图谱 dump   -> $NK_DST/neo4j.dump"
+    log "  导入方法见 deploy/README.md §4 路线 B (neo4j-admin database load)"
+else
+    log "警告: 暂存区未找到 neo4j.dump (Neo4j 将为空库, 检索环节无法运行!)"
+fi
+
+# --- 6. 可选: 365GB 训练数据集 (8 个 tar 分片) ---
 if [[ $WITH_DATASET -eq 1 ]]; then
     DS_DST="$DATA_DIR/dataset_dl"
     mkdir -p "$DS_DST"

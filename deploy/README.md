@@ -69,16 +69,19 @@ docker compose -f deploy/docker-compose.yml --profile infer run --rm infer \
 
 ### 路线 B — 从 neo4j-dump 恢复 (分钟级, 推荐)
 
-向发布者索取 `neo4j.dump` (图库物理备份, 含全部 Morphospecies/EntryImage/向量索引):
+`neo4j.dump` (图库物理备份, 含全部 Morphospecies/EntryImage/向量索引, 458MB)
+已随资产发布: `bash deploy/download_assets.sh` 会自动下载并落位到 `data/neo4j/neo4j.dump`。
 
 ```bash
 docker compose -f deploy/docker-compose.yml stop neo4j
-docker run --rm -v depth_neo4j_data:/data -v "$PWD/deploy":/backup neo4j:5-community \
+docker run --rm -v depth_neo4j_data:/data -v "$PWD/data/neo4j":/backup neo4j:5-community \
     cp /backup/neo4j.dump /data/neo4j.dump
 docker run --rm -v depth_neo4j_data:/data neo4j:5-community \
     neo4j-admin database load neo4j --overwrite-destination=true --from-path=/data
 docker compose -f deploy/docker-compose.yml up -d neo4j
 ```
+
+导入后验证: 总节点约 30 万, `MATCH (n:EntryImage) RETURN count(n)` 应为 **34,026**。
 
 > 两种路线都会得到可查询的 `entryimage_embeddings` 向量索引 (1024 维 cosine)。
 
