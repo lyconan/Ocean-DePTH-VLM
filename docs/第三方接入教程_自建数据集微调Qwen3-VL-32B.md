@@ -82,7 +82,22 @@ dataset_root/
 
 ## 3. 制作 SFT 微调数据
 
-### 3.1 一条命令
+**两条路线任选**：
+- **路线 A（第三方自建数据）**：按本节用 `scripts/39_build_sft_dataset.py` 从你自己的图像集出题
+- **路线 B（使用系统现成数据）**：系统已备好净化后的 96,141 条 SFT 数据
+  （JEDI 过滤后：species 11 图选择题 59,407 + name 开放命名 27,509 + class/genus 选择题 9,225，
+  存于 `data/processed/sft/`），用 `scripts/39b_sft_to_swift.py` 一键转成训练格式：
+
+```bash
+python3 scripts/39b_sft_to_swift.py \
+    --src data/processed/sft --out data/processed/sft_swift
+# 输出 sft_train_swift.jsonl (67,939) / sft_name_train_swift.jsonl (27,509) /
+#      sft_val_swift.jsonl (693), §4 训练时 --dataset 指向 *_swift.jsonl 即可
+```
+
+路线 B 无需自备图像，适合先跑通全流程再换自有数据。其余步骤两路线完全一致。
+
+### 3.1 一条命令（路线 A）
 
 ```bash
 python3 scripts/39_build_sft_dataset.py \
