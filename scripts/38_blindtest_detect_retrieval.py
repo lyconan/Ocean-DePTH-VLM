@@ -212,6 +212,8 @@ def main():
         print(f"嵌入缓存: 命中 {len(CACHE)} 条", flush=True)
     si = 0
     last_rep = -1
+    _wins = 0
+    POISON = set()  # 嵌入失败的毒图键 (uuid|box), 跳过其检索指标
     for w0 in range(0, len(scene_items), WIN):
         window = scene_items[w0:w0 + WIN]
         # E1': YOLO 跨场景批处理 (仅推理缓存缺失的图)
@@ -283,21 +285,50 @@ def main():
             miss = [i for i, k in enumerate(keys) if k not in CACHE]
             _ts = time.time()
             if miss:
-                E = extract_embeddings_batch([crops[i] for i in miss], model, proc,
-                                             batch_size=64, num_workers=10)
-                Ef = extract_embeddings_batch(
-                    [crops[i].transpose(Image.FLIP_LEFT_RIGHT) for i in miss],
-                    model, proc, batch_size=64, num_workers=10)
-                E = E + Ef
-                E = E / E.norm(dim=1, keepdim=True).clamp_min(1e-12)
-                _Em = E.numpy().astype("float32")
+                def _embed_batch(crops_, workers=10):
+                    E = extract_embeddings_batch(crops_, model, proc,
+                                                 batch_size=64, num_workers=workers)
+                    Ef = extract_embeddings_batch(
+                        [c.transpose(Image.FLIP_LEFT_RIGHT) for c in crops_],
+                        model, proc, batch_size=64, num_workers=workers)
+                    E = E + Ef
+                    E = E / E.norm(dim=1, keepdim=True).clamp_min(1e-12)
+                    return E.numpy().astype("float32")
+
+                try:
+                    _Em = _embed_batch([crops[i] for i in miss])
+                except Exception as _e:
+                    print(f"  [embed] 批量失败 ({_e}), 降级 num_workers=0 重试", flush=True)
+                    try:
+                        _Em = _embed_batch([crops[i] for i in miss], workers=0)
+                    except Exception as _e2:
+                        print(f"  [embed] 整窗仍失败 ({_e2}), 逐图隔离毒图", flush=True)
+                        _Em = np.zeros((len(miss), 1024), dtype="float32")
+                        for j, i in enumerate(miss):
+                            try:
+                                _Em[j] = _embed_batch([crops[i]], workers=0)[0]
+                            except Exception as _e3:
+                                POISON.add(keys[i])
+                                print(f"  [poison] 跳过毒图 {keys[i]}: "
+                                      f"{type(_e3).__name__}", flush=True)
                 for j, i in enumerate(miss):
                     CACHE[keys[i]] = _Em[j]
             En = np.stack([CACHE[k] for k in keys])
             T["embed"] += time.time() - _ts
 
+            # 增量落盘: 每 5 窗口保存嵌入+检测缓存, 崩溃不清零
+            _wins += 1
+            if _wins % 5 == 0 or w0 + WIN >= len(scene_items):
+                _ks = list(CACHE.keys())
+                np.savez(CACHE_PATH, k=np.array(_ks),
+                         v=np.stack([CACHE[k] for k in _ks]).astype("float32"))
+                pickle.dump({"sig": DET_SIG, "dets": DET_CACHE},
+                            open(DET_CACHE_PATH, "wb"))
+
             _ts = time.time()
             for i, (row, d, mid, crop) in enumerate(win_tasks):
+                if keys[i] in POISON:
+                    continue  # 毒图不计入检索指标
                 ev = En[i]
                 # P2 Query Expansion: top-5 库图均值与查询向量等权融合再检
                 sims = LIB_C @ ev
