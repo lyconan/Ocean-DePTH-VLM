@@ -1,0 +1,17 @@
+# Qwen3-VL-32B QLoRA 微调环境 (Python 3.10+, CUDA 12.x)
+# 安装: pip install -r deploy/finetune/requirements_finetune.txt
+# 说明: torch/torchvision 按你的 CUDA 版本从 pytorch.org 安装后再装其余依赖
+
+# --- 方案A: ms-swift (推荐, Qwen3-VL 官方生态) ---
+ms-swift>=3.4
+transformers>=4.51
+accelerate
+qwen-vl-utils
+datasets
+peft
+trl
+deepspeed            # 显存不足时启用 zero2
+bitsandbytes         # QLoRA 4bit 量化
+
+# --- 方案B: LLaMA-Factory (替代, 二选一) ---
+# llama-factory>=0.9.3

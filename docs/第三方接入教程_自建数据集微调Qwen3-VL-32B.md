@@ -137,6 +137,38 @@ python3 scripts/39_build_sft_dataset.py \
 
 ## 4. QLoRA 微调 Qwen3-VL-32B
 
+### 4.0 工具选型：ms-swift 还是 LLaMA-Factory？
+
+两者都能微调 Qwen3-VL，选其一即可；本系统默认走 **ms-swift**：
+
+| | **方案 A：ms-swift（推荐）** | **方案 B：LLaMA-Factory** |
+|---|---|---|
+| 定位 | ModelScope 官方训练框架，Qwen 团队主力适配 | 通用 LLM/VLM 微调框架，社区生态大 |
+| Qwen3-VL 多模态支持 | 第一时间适配，多图输入开箱即用 | ≥0.9.3 版本支持（训练前核对官方 supported.md） |
+| 本仓库配套 | `deploy/finetune/train_ms_swift.sh` 一键脚本 | `deploy/finetune/llamafactory_qwen3vl_lora.yaml` 配置模板 |
+| 依赖 | `deploy/finetune/requirements_finetune.txt`（已含两方案的依赖，B 方案取消注释） | 同左 |
+| 产出 | LoRA 适配器目录（两方案通用，§5 vLLM 部署方式相同） | 同左 |
+
+**怎么选**：没有强偏好就用方案 A（本教程所有命令、验收标准都基于它）；
+团队已有 LLaMA-Factory 使用经验则用方案 B——注意其数据格式与 ms-swift 略有差异
+（`<image>` 标签 vs `<img>`），转换方式见 yaml 文件头部注释。
+
+**环境安装（两方案共用一份清单）**：
+
+```bash
+pip install -r deploy/finetune/requirements_finetune.txt
+```
+
+**一键训练（方案 A）**：
+
+```bash
+bash deploy/finetune/train_ms_swift.sh \
+    --data ./sft_out/swift_train.jsonl \
+    --val  ./sft_out/swift_val.jsonl \
+    --model ./Qwen3-VL-32B-Instruct
+# 双卡: GPUS=2 bash deploy/finetune/train_ms_swift.sh ...
+```
+
 ### 4.1 训练命令（ms-swift，QLoRA 4bit 起点）
 
 ```bash

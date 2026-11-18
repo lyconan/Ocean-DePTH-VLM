@@ -1,0 +1,62 @@
+# =============================================================================
+# LLaMA-Factory 配置 — Qwen3-VL-32B QLoRA (方案B/替代)
+#
+# 适用: 习惯 LLaMA-Factory 生态的团队。需 LLaMA-Factory >= 0.9.3 (含 Qwen3-VL 多模态支持,
+#       训练前请对照官方 supported.md 确认你的版本已收录 Qwen3-VL)。
+#
+# 用法:
+#   pip install -e ".[torch,metrics]"   # 安装 llamafactory 后
+#   数据注册: 在 data/dataset_info.json 中登记本数据集, 或直接用 --dataset 指向 jsonl
+#   llamafactory-cli train deploy/finetune/llamafactory_qwen3vl_lora.yaml
+#
+# 数据: 与方案A同一份 ms-swift messages 格式不通用 — 用 39 号脚本时加 --to-llamafactory
+#       (若你的版本无此开关, 手动转换为 LLaMA-Factory sharegpt 多图格式:
+#        {"messages":[{"role":"user","content":"<image>查询...<image>参考..."},...],
+#         "images":[...]}), 语义模板见 docs/第三方接入教程 §3.3
+# =============================================================================
+
+### 模型
+model_name_or_path: ./Qwen3-VL-32B-Instruct   # 本地权重路径; 也可用 HF id
+quantization_bit: 4                            # QLoRA 4bit; 显存充裕可删去此行用 bf16
+quantization_method: bnb
+
+### 微调方法
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+lora_target: all
+
+### 数据 (二选一: 注册名 / 文件路径)
+dataset: depth_vlm_sft          # 在 data/dataset_info.json 里登记后的名字
+# dataset_dir: ./data
+template: qwen3_vl              # Qwen3-VL 对话模板; 老版本若无此模板用 qwen2_vl 试
+cutoff_len: 8192
+max_samples: 100000
+overwrite_cache: true
+preprocessing_num_workers: 8
+image_max_pixels: 200704        # 448x448, 与推理端一致
+
+### 输出
+output_dir: ./llamafactory_out/qwen3vl32b_lora
+logging_steps: 10
+save_steps: 200
+save_total_limit: 3
+plot_loss: true
+
+### 训练超参 (与方案A对齐)
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+learning_rate: 1.0e-4
+num_train_epochs: 2
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+gradient_checkpointing: true
+
+### 评估
+val_size: 0.0                   # val 用独立文件: 改用 eval_dataset + eval_steps
+per_device_eval_batch_size: 1
+eval_strategy: "no"

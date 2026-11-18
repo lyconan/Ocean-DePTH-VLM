@@ -37,6 +37,10 @@
 - `docs/第三方接入教程_自建数据集微调Qwen3-VL-32B.md`：**全流程教程**——
   数据规范 → SFT 制作 → ms-swift QLoRA 4bit 微调 Qwen3-VL-32B → vLLM LoRA 部署
   → 改 `vlm_api_url` 两行接入系统 → 乱序评测验收标准（含位置偏置教训）→ FAQ
+- **训练工具与配置（§4.0）**：默认 ms-swift（Qwen3-VL 官方生态，一键脚本
+  `deploy/finetune/train_ms_swift.sh`），LLaMA-Factory 作为替代方案提供完整配置模板
+  `deploy/finetune/llamafactory_qwen3vl_lora.yaml`；依赖清单
+  `deploy/finetune/requirements_finetune.txt` 两方案共用
 - `docs/VLM终判问题汇总_供Gemini分析.md`：7 模型 × 3 协议终判实验全景（背景资料）
 
 ### 4. 工程加固
