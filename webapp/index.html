@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DePTH-VLM 深海底栖生物知识系统 · 控制台</title>
+<style>
+:root{
+  --bg:#070d1a; --bg2:#0b1526; --card:#0f1c33; --card2:#12213a;
+  --line:#1d3050; --tx:#dbe7f5; --tx2:#8ba3c2; --ac:#38d9f0; --ac2:#5ee0a8;
+  --warn:#f0b438; --bad:#f06060; --gold:#ffd166;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#0e2440 0%,var(--bg) 60%);
+     color:var(--tx);font:14px/1.6 "PingFang SC","Microsoft YaHei",system-ui,sans-serif;min-height:100vh}
+header{padding:18px 28px 0;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)}
+header h1{font-size:19px;letter-spacing:1px}
+header h1 b{color:var(--ac)}
+header .sub{color:var(--tx2);font-size:12px}
+nav{display:flex;gap:4px;padding:12px 28px 0}
+nav button{background:none;border:none;color:var(--tx2);font-size:14px;padding:9px 18px;
+  cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px}
+nav button.on{color:var(--ac);border-color:var(--ac)}
+main{padding:22px 28px 60px;max-width:1280px;margin:0 auto}
+h2{font-size:16px;margin:6px 0 14px;color:var(--tx)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card .v{font-size:26px;font-weight:700;color:var(--ac);font-family:ui-monospace,monospace}
+.card .l{color:var(--tx2);font-size:12px;margin-top:2px}
+.card.g .v{color:var(--ac2)} .card.w .v{color:var(--warn)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:8px 0}
+.fstep{flex:1;min-width:150px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;position:relative;margin:0 14px 0 0}
+.fstep:last-child{margin-right:0}
+.fstep::after{content:"→";position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+  color:var(--ac);font-size:16px}
+.fstep:last-child::after{content:""}
+.fstep .t{font-weight:600;color:var(--ac)}
+.fstep .m{font-size:12px;color:var(--tx2);margin-top:4px}
+.fstep.stub{opacity:.75;border-style:dashed}
+.fstep.stub .t{color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--tx2);text-align:left;font-weight:500;padding:7px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid rgba(29,48,80,.5)}
+tr:hover td{background:rgba(56,217,240,.05)}
+.bar{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--ac),var(--ac2))}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.itile{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer}
+.itile img{width:100%;height:112px;object-fit:cover;display:block;background:#02060d}
+.itile .c{padding:7px 9px;font-size:11px;color:var(--tx2)}
+.itile .c b{display:block;color:var(--tx);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px}
+.badge.ok{background:rgba(94,224,168,.15);color:var(--ac2)}
+.badge.no{background:rgba(240,96,96,.15);color:var(--bad)}
+.badge.src{background:rgba(56,217,240,.12);color:var(--ac)}
+input,select{background:var(--bg2);border:1px solid var(--line);color:var(--tx);
+  border-radius:8px;padding:8px 12px;font-size:13px;outline:none}
+input:focus{border-color:var(--ac)}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.pager{display:flex;gap:8px;margin-top:14px;align-items:center;color:var(--tx2);font-size:12px}
+.pager button{background:var(--bg2);border:1px solid var(--line);color:var(--tx);border-radius:7px;
+  padding:5px 12px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.detail{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px}
+.kv .k{color:var(--tx2)}
+.kt{white-space:pre-wrap;font-size:13px;color:var(--tx);max-height:420px;overflow:auto;
+  background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--line)}
+.cand{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:9px;
+  border:1px solid transparent;background:var(--bg2);margin-bottom:7px}
+.cand.hit{border-color:var(--gold);background:rgba(255,209,102,.08)}
+.cand .rk{color:var(--tx2);width:44px;font-family:ui-monospace,monospace;font-size:12px}
+.cand img{width:52px;height:52px;object-fit:cover;border-radius:7px;background:#02060d}
+.cand .nm{font-size:13px}
+.cand .nm small{color:var(--tx2);display:block}
+.metric{font-family:ui-monospace,monospace;font-size:22px;color:var(--ac)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.mcell{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.mcell .l{font-size:12px;color:var(--tx2)}
+.hide{display:none!important}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--line);
+  padding:10px 16px;border-radius:10px;color:var(--tx);font-size:13px}
+a{color:var(--ac);text-decoration:none}
+#main img{cursor:zoom-in}
+#lightbox{position:fixed;inset:0;background:rgba(2,6,13,.92);z-index:99;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;padding:28px;cursor:zoom-out}
+#lightbox .lbbar{color:var(--tx2);font-size:12px;margin-bottom:10px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+#lightbox .lbbar b{color:var(--tx)}
+#lightbox .lbwrap{position:relative;display:inline-block;font-size:0;line-height:0;
+  max-width:100%;max-height:82vh;background:#02060d;border:1px solid var(--line);border-radius:10px}
+#lightbox img{max-width:100%;max-height:82vh;display:block}
+#lightbox svg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+#lightbox select{max-width:320px}
+.lgd{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.lgd.det{background:none;border:2px solid var(--ac)}
+.lgd.gold{background:none;border:2px solid var(--gold)}
+.lgd.gt{background:none;border:2px dashed var(--ac2)}
+</style>
+</head>
+<body>
+<header>
+  <h1>DePTH-VLM <b>深海生物知识系统</b> · 控制台</h1>
+  <div class="sub">知识图谱 / 检索库 / 管线回放 / VLM 终判（接口预留）</div>
+</header>
+<nav id="nav">
+  <button data-t="dash" class="on">总览</button>
+  <button data-t="kb">知识库</button>
+  <button data-t="lib">检索库</button>
+  <button data-t="pipe">管线回放</button>
+  <button data-t="vlm">VLM 终判</button>
+</nav>
+<main id="main"></main>
+<div id="toast" class="hide"></div>
+<div id="lightbox" class="hide" onclick="lbClose()"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const media = p => p ? '/media/' + p.replace(/^\/+/,'') : '';
+async function api(u){ const r = await fetch(u); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.remove('hide'); setTimeout(()=>t.classList.add('hide'),2500); }
+function fmt(n){ return (n??0).toLocaleString(); }
+
+/* ================= 灯箱 (缩略图放大 / 原图框标注) ================= */
+function lbShow(html){
+  $('#lightbox').innerHTML = html;
+  $('#lightbox').classList.remove('hide');
+}
+window.lbClose = () => { $('#lightbox').classList.add('hide'); $('#lightbox').innerHTML=''; };
+document.addEventListener('keydown', e => { if(e.key==='Escape') lbClose(); });
+/* 点击任意项目图片放大查看 */
+document.addEventListener('click', e => {
+  const img = e.target.closest('img');
+  if(!img || img.closest('#lightbox')) return;
+  if(!img.src.includes('/media/')) return;
+  const cap = img.closest('.itile,.cand')?.querySelector('.c,.nm')?.textContent?.trim() || '';
+  lbShow(`<div class="lbbar"><b>${esc(cap)}</b><span>点击任意处或按 Esc 关闭</span></div>
+    <div class="lbwrap"><img src="${img.src}"></div>`);
+});
+/* 场景原图 + 框标注 (管线回放 drill-down 调用) */
+window.lbScene = async (uuid, idx) => {
+  try{
+    lbShow('<div class="lbbar">加载原图中…</div>');
+    const d = await api('/api/pipeline/scene/'+uuid);
+    const objs = d.objects||[];
+    idx = Math.min(idx||0, objs.length-1);
+    const draw = () => {
+      const o = objs[idx] || {};
+      const goldBox = o.det_box_full || null;
+      const detBoxes = (d.dets||[]).filter(x => JSON.stringify(x.box) !== JSON.stringify(goldBox));
+      const sel = objs.length>1 ? `<select onchange="lbScene('${uuid}',+this.value)" style="padding:3px 8px">
+        ${objs.map((ob,i)=>`<option value="${i}" ${i===idx?'selected':''}>${esc(ob.concept)} · ${esc(ob.mid)}${ob.det_box_full?'':' (无框)'}</option>`).join('')}
+        </select> <span>共 ${objs.length} 个对象</span>` : '';
+      const bar = `<div class="lbbar" onclick="event.stopPropagation()">
+        <b>场景原图标注</b><span style="font-family:ui-monospace,monospace">${esc(uuid)}</span>${sel}
+        <span><i class="lgd gold"></i>当前对象</span>
+        <span><i class="lgd det"></i>YOLO 检测 ${detBoxes.length}</span>
+        <span><i class="lgd gt"></i>GT 标注 ${(d.gts||[]).length}</span>
+        <span>点击空白处或 Esc 关闭</span></div>`;
+      const svgBox = (b, color, dash, label, fs) =>
+        `<rect x="${b[0]}" y="${b[1]}" width="${Math.max(b[2]-b[0],1)}" height="${Math.max(b[3]-b[1],1)}"
+          fill="none" stroke="${color}" stroke-width="2" ${dash?'stroke-dasharray="6 4"':''} rx="2"/>` +
+        (label ? `<text x="${b[0]+3}" y="${Math.max(b[1]-5,13)}" fill="${color}" font-size="${fs||14}"
+          font-weight="600" paint-order="stroke" stroke="rgba(2,6,13,.8)" stroke-width="3"
+          font-family="ui-monospace,monospace">${esc(label)}</text>` : '');
+      lbShow(`${bar}<div class="lbwrap" onclick="event.stopPropagation()">
+        <img id="lbtile" src="${media(d.tile)}">
+        <svg id="lbol" viewBox="0 0 16 9" preserveAspectRatio="none"></svg></div>`);
+      const apply = img => {
+        if(!img.naturalWidth) return;
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const svg = $('#lbol');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.innerHTML =
+          detBoxes.map(x => svgBox(x.box, 'var(--ac)')).join('') +
+          (d.gts||[]).map(g => svgBox([g.box[0]*W, g.box[1]*H, (g.box[0]+g.box[2])*W, (g.box[1]+g.box[3])*H],
+            'var(--ac2)', true, g.cls)).join('') +
+          (goldBox ? svgBox(goldBox, 'var(--gold)', false, `${o.concept}`, 16) : '');
+      };
+      const img = $('#lbtile');
+      img.onload = () => apply(img);
+      if (img.complete) apply(img);   // 缓存图可能在绑定前已加载完
+    };
+    draw();
+  }catch(e){ lbShow(`<div class="lbbar">原图加载失败: ${esc(e.message)}</div>`); }
+};
+
+let TAB='dash';
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); TAB=b.dataset.t; render();
+});
+
+const views = {};
+function render(){ (views[TAB]||(()=>{}))(); }
+
+/* ================= 总览 ================= */
+views.dash = async () => {
+  $('#main').innerHTML = '<h2>总览</h2><div class="cards" id="dcards">加载中…</div>' +
+    '<div class="panel"><h2>识别管线</h2><div class="flow" id="dflow"></div>' +
+    '<div id="dstub" style="color:var(--warn);font-size:12px;margin-top:6px"></div></div>' +
+    '<div class="panel"><h2>物种分布（按门）</h2><div id="dphy"></div></div>' +
+    '<div class="panel"><h2>检索库证据构成</h2><div id="dsrc"></div></div>';
+  try{
+    const [st, ps] = await Promise.all([api('/api/stats'), api('/api/pipeline/summary')]);
+    $('#dcards').innerHTML = [
+      card(fmt(st.species),'形态种条目',''), card(fmt(st.entry_images),'检索库证据图',''),
+      card(fmt(st.with_desc),'含知识描述条目',''), card(fmt(st.kb_updated),'人工校准知识','g'),
+      card('1744','盲测场景数',''), card(ps.metrics?.['detection_recall@0.5']?.toFixed ? (ps.metrics['detection_recall@0.5']*100).toFixed(1)+'%' : '-', '检测 recall@0.5',''),
+      card(ps.metrics ? (ps.metrics['species_top1_cfusion']*100).toFixed(1)+'%' : '-', '检索 top-1 (cfusion)',''),
+    ].join('');
+    $('#dflow').innerHTML = ps.stages.map(s=>
+      `<div class="fstep ${s.key==='vlm'?'stub':''}"><div class="t">${s.step}. ${esc(s.name)}</div>
+       <div class="m">${esc(s.desc)}</div></div>`).join('');
+    $('#dstub').textContent = '※ 第 5 步为预留接口：微调后的 VLM 以 vLLM 部署后，在 config/graphrag_inference.yaml 填入 vlm_api_url 即自动启用（右侧"VLM 终判"页可查看接口状态）。';
+    const maxp = Math.max(...st.by_phylum.map(x=>x.n),1);
+    $('#dphy').innerHTML = '<table>' + st.by_phylum.map(x=>
+      `<tr><td style="width:150px">${esc(x.name)}</td><td><div class="bar" style="width:${x.n/maxp*100}%"></div></td>
+       <td style="width:70px;text-align:right">${fmt(x.n)}</td></tr>`).join('') + '</table>';
+    const maxs = Math.max(...st.by_source.map(x=>x.n),1);
+    $('#dsrc').innerHTML = '<table>' + st.by_source.map(x=>
+      `<tr><td style="width:170px"><span class="badge src">${esc(x.name)}</span></td>
+       <td><div class="bar" style="width:${x.n/maxs*100}%"></div></td>
+       <td style="width:80px;text-align:right">${fmt(x.n)}</td></tr>`).join('') + '</table>';
+  }catch(e){ toast('加载失败: '+e.message); }
+};
+const card = (v,l,cls='') => `<div class="card ${cls}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+
+/* ================= 知识库 ================= */
+let kbState = {q:'', phylum:'', page:1};
+views.kb = async () => {
+  $('#main').innerHTML = `<h2>知识库 · 2,641 形态种</h2>
+    <div class="toolbar">
+      <input id="kbq" placeholder="搜索学名 / 条目 ID / 中文名" value="${esc(kbState.q)}" style="width:280px">
+      <select id="kbph"><option value="">全部门</option></select>
+      <button class="pager" onclick="kbSearch()">搜索</button>
+      <span id="kbcount" style="color:var(--tx2);font-size:12px"></span>
+    </div>
+    <div id="kblist"></div><div class="pager" id="kbpager"></div><div id="kbdetail"></div>`;
+  $('#kbq').addEventListener('keydown', e=>{ if(e.key==='Enter') kbSearch(); });
+  const st = await api('/api/stats');
+  $('#kbph').innerHTML = '<option value="">全部门</option>' +
+    st.by_phylum.map(x=>`<option ${kbState.phylum===x.name?'selected':''}>${esc(x.name)}</option>`).join('');
+  $('#kbph').onchange = e=>{ kbState.phylum=e.target.value; kbState.page=1; kbLoad(); };
+  kbLoad();
+};
+function kbSearch(){ kbState.q = $('#kbq').value.trim(); kbState.page = 1; kbLoad(); }
+async function kbLoad(){
+  try{
+    const d = await api(`/api/species?q=${encodeURIComponent(kbState.q)}&phylum=${encodeURIComponent(kbState.phylum)}&page=${kbState.page}&size=30`);
+    $('#kbcount').textContent = `共 ${fmt(d.total)} 条`;
+    $('#kblist').innerHTML = '<table><tr><th>条目 ID</th><th>学名</th><th>中文名</th><th>门</th><th>纲</th><th>证据图</th><th>知识状态</th></tr>' +
+      d.items.map(x=>`<tr onclick="kbDetail('${x.mid}')" style="cursor:pointer">
+        <td style="font-family:ui-monospace,monospace;color:var(--ac)">${esc(x.mid)}</td>
+        <td><i>${esc(x.latin||x.name)}</i>${x.cn?` · ${esc(x.cn)}`:''}</td><td>${esc(x.cn||'-')}</td>
+        <td>${esc(x.phylum||'-')}</td><td>${esc(x.cls||'-')}</td><td>${fmt(x.imgs)}</td>
+        <td><span class="badge ${x.kb_updated?'ok':'no'}">${x.kb_updated?'已校准':'图谱挂接'}</span></td></tr>`).join('') + '</table>';
+    const pages = Math.ceil(d.total/d.size);
+    $('#kbpager').innerHTML =
+      `<button ${kbState.page<=1?'disabled':''} onclick="kbPage(-1)">上一页</button>
+       第 ${d.page} / ${pages} 页 <button ${kbState.page>=pages?'disabled':''} onclick="kbPage(1)">下一页</button>`;
+  }catch(e){ toast(e.message); }
+}
+function kbPage(d){ kbState.page += d; kbLoad(); }
+window.kbMore = async (mid, page) => {
+  const btn = $('#kbmore button'); if(btn){ btn.disabled = true; btn.textContent = '加载中…'; }
+  try{
+    const d = await api(`/api/entries?mid=${encodeURIComponent(mid)}&page=${page}&size=48`);
+    const shown = new Set([...$('#kbimgs').querySelectorAll('.c')].map(x=>x.textContent));
+    const fresh = d.items.filter(x=>!shown.has(x.path.split('/').pop().slice(0,22)));
+    $('#kbimgs').insertAdjacentHTML('beforeend', fresh.map(x=>
+      `<div class="itile"><img loading="lazy" src="${media(x.path)}" onerror="this.style.opacity=.15">
+       <div class="c">${esc(x.path.split('/').pop().slice(0,22))}</div></div>`).join(''));
+    const total = $('#kbimgs').children.length;
+    if(total >= d.total) $('#kbmore').innerHTML = `<span style="color:var(--tx2);font-size:12px">已展示全部 ${fmt(d.total)} 张</span>`;
+    else $('#kbmore').innerHTML = `<button class="pager" onclick="kbMore('${esc(mid)}',${d.page+1})">加载更多（已展示 ${total} / 共 ${fmt(d.total)} 张）</button>`;
+  }catch(e){ toast(e.message); if(btn){ btn.disabled=false; btn.textContent='加载更多'; } }
+};
+window.kbDetail = async mid => {
+  try{
+    const d = await api('/api/species/'+mid);
+    $('#kbdetail').innerHTML = `<div class="panel">
+      <h2><i>${esc(d.latin||d.name)}</i> ${d.cn?'· '+esc(d.cn):''}
+        <a href="${esc(d.worms_url||('#'))}" target="_blank" style="font-size:12px;margin-left:8px">WoRMS ${d.aphia||''} ↗</a></h2>
+      <div class="detail">
+        <div>
+          <div class="kv" style="margin-bottom:12px">
+            <span class="k">条目</span><span style="font-family:ui-monospace,monospace;color:var(--ac)">${esc(d.mid)}</span>
+            <span class="k">分类</span><span>${esc(d.phylum||'-')} → ${esc(d.cls||'-')} → ${esc(d.ord||'-')} → ${esc(d.fam||'-')} → ${esc(d.genus||'-')}</span>
+            <span class="k">阶元</span><span>${esc(d.rank_cn||d.rank||'-')}</span>
+            <span class="k">知识来源</span><span>${esc(d.kb_source||'-')} <span class="badge ${d.kb_updated?'ok':'no'}">${d.kb_updated?'人工校准':'图谱挂接'}</span></span>
+            <span class="k">证据图</span><span>${fmt(d.n_img)} 张</span>
+          </div>
+          <div class="grid" id="kbimgs">${(d.imgs||[]).map(p=>
+            `<div class="itile"><img loading="lazy" src="${media(p)}" onerror="this.style.opacity=.15">
+             <div class="c">${esc(p.split('/').pop().slice(0,22))}</div></div>`).join('')}</div>
+          <div id="kbmore" style="text-align:center;margin-top:10px">${(d.n_img||0) > (d.imgs||[]).length
+            ? `<button class="pager" onclick="kbMore('${esc(d.mid)}',1)">加载更多（已展示 ${d.imgs.length} / 共 ${fmt(d.n_img)} 张）</button>`
+            : ''}</div>
+        </div>
+        <div><div style="color:var(--tx2);font-size:12px;margin-bottom:6px">知识描述（knowledge_text）</div>
+          <div class="kt">${esc(d.knowledge_text||d.description||'暂无知识文本')}</div></div>
+      </div></div>`;
+    $('#kbdetail').scrollIntoView({behavior:'smooth'});
+  }catch(e){ toast(e.message); }
+};
+
+/* ================= 检索库 ================= */
+let libState = {source:'', q:'', page:1};
+views.lib = async () => {
+  $('#main').innerHTML = `<h2>检索库 · 30,629 条证据图</h2>
+    <div class="toolbar">
+      <select id="libsrc"><option value="">全部来源</option>
+        <option value="fathomnet">FathomNet 框切图</option><option value="yolo_boxes">标注队列帧图</option>
+        <option value="gbif">GBIF 补充</option><option value="atlas">图鉴插图</option>
+        <option value="benthicnet">BenthicNet</option><option value="manual">人工兜底</option></select>
+      <input id="libq" placeholder="按路径/物种 ID 过滤" style="width:240px">
+      <button class="pager" onclick="libLoad(1)">筛选</button>
+      <span id="libcount" style="color:var(--tx2);font-size:12px"></span>
+    </div>
+    <div class="grid" id="libgrid"></div><div class="pager" id="libpager"></div>`;
+  $('#libsrc').onchange = e=>{ libState.source=e.target.value; libLoad(1); };
+  $('#libq').addEventListener('keydown', e=>{ if(e.key==='Enter') libLoad(1); });
+  libLoad(1);
+};
+async function libLoad(page){
+  libState.page = page||libState.page;
+  try{
+    const d = await api(`/api/entries?source=${encodeURIComponent(libState.source)}&q=${encodeURIComponent(libState.q||$('#libq')?.value||'')}&page=${libState.page}&size=48`);
+    $('#libcount').textContent = `共 ${fmt(d.total)} 张`;
+    $('#libgrid').innerHTML = d.items.map(x=>
+      `<div class="itile"><img loading="lazy" src="${media(x.path)}" onerror="this.style.opacity=.15">
+       <div class="c"><b>${esc(x.name)}</b>${esc(x.mid)} · <span class="badge src">${esc(x.src)}</span></div></div>`).join('');
+    const pages = Math.ceil(d.total/d.size);
+    $('#libpager').innerHTML =
+      `<button ${d.page<=1?'disabled':''} onclick="libLoad(${d.page-1})">上一页</button>
+       第 ${d.page} / ${pages} 页（每页 48 张）<button ${d.page>=pages?'disabled':''} onclick="libLoad(${d.page+1})">下一页</button>`;
+  }catch(e){ toast(e.message); }
+}
+
+/* ================= 管线回放 ================= */
+let pipeState = {page:1, hit:'all'};
+views.pipe = async () => {
+  $('#main').innerHTML = `<h2>管线回放 · 盲测全流程</h2>
+    <div class="mgrid" id="pmetrics"></div>
+    <div class="panel"><h2>逐对象结果（点击查看五策略候选回放）</h2>
+    <div class="toolbar">
+      <select id="phit"><option value="all">全部对象</option><option value="hit">检索 top-1 命中</option><option value="miss">top-1 未命中</option></select>
+      <span id="pcount" style="color:var(--tx2);font-size:12px"></span></div>
+    <div id="plist"></div><div class="pager" id="ppager"></div></div>
+    <div id="pdetail"></div>`;
+  $('#phit').onchange = e=>{ pipeState.hit=e.target.value; pipeState.page=1; pipeLoad(); };
+  try{
+    const s = await api('/api/pipeline/summary');
+    const m = s.metrics;
+    if(!m){
+      $('#pmetrics').innerHTML = `<div style="color:var(--tx2);font-size:13px">${esc(s.note||'盲测数据未部署 — 管线回放不可用')}</div>`;
+      $('#pcount').textContent = '';
+      $('#plist').innerHTML = '';
+      $('#ppager').innerHTML = '';
+      return;
+    }
+    $('#pmetrics').innerHTML = [
+      mcell('YOLO 检测 recall@0.5', (m['detection_recall@0.5']*100).toFixed(1)+'%'),
+      mcell('34 纲粗类别 acc', (m['coarse34_acc']*100).toFixed(1)+'%'),
+      mcell('物种 top-1（cfusion 定版）', (m['species_top1_cfusion']*100).toFixed(1)+'%'),
+      mcell('top-5 / top-10（cfusion）', (m['species_top5_cfusion']*100).toFixed(1)+'% / '+(m['species_top10_cfusion']*100).toFixed(1)+'%'),
+      mcell('属级 top-1', (m['genus_top1']*100).toFixed(1)+'%'),
+      mcell('评测对象', fmt(m.stats?.n_objects ?? '5,184')),
+    ].join('');
+    pipeLoad();
+  }catch(e){ toast(e.message); }
+};
+const mcell = (l,v) => `<div class="mcell"><div class="metric">${v}</div><div class="l">${esc(l)}</div></div>`;
+async function pipeLoad(){
+  try{
+    const d = await api(`/api/pipeline/objects?page=${pipeState.page}&size=25&hit=${pipeState.hit}`);
+    $('#pcount').textContent = `共 ${fmt(d.total)} 个检索对象`;
+    $('#plist').innerHTML = '<table><tr><th>场景 UUID</th><th>GT 物种</th><th>GT 条目</th><th>检测</th><th>IoU</th><th>conf</th><th>top-1 (cfusion)</th><th>结果</th></tr>' +
+      d.items.map(o=>{
+        const top1 = (o.retrieval_top10_cfusion||[])[0];
+        const hit = top1 === o.mid;
+        return `<tr onclick="pipeObj('${o.uuid}',${o.oidx||0})" style="cursor:pointer">
+        <td style="font-family:ui-monospace,monospace;font-size:11px;color:var(--tx2)">${o.uuid.slice(0,8)}…${o.uuid.slice(-4)}</td>
+        <td><i>${esc(o.concept)}</i></td><td style="color:var(--ac)">${esc(o.mid)}</td>
+        <td><span class="badge ${o.detected?'ok':'no'}">${o.detected?'检出':'漏检'}</span></td>
+        <td>${o.iou||'-'}</td><td>${o.det_conf?('0.'+String(o.det_conf).split('.')[1]?.slice(0,3)):'-'}</td>
+        <td>${esc(top1||'-')}</td>
+        <td><span class="badge ${hit?'ok':'no'}">${hit?'✓ top-1':'✗'}</span></td></tr>`;
+      }).join('') + '</table>';
+    const pages = Math.ceil(d.total/d.size);
+    $('#ppager').innerHTML =
+      `<button ${d.page<=1?'disabled':''} onclick="pipePage(-1)">上一页</button>
+       第 ${d.page} / ${pages} 页 <button ${d.page>=pages?'disabled':''} onclick="pipePage(1)">下一页</button>`;
+  }catch(e){ toast(e.message); }
+}
+function pipePage(d){ pipeState.page+=d; pipeLoad(); }
+window.pipeObj = async (uuid, idx = 0) => {
+  try{
+    const d = await api('/api/pipeline/object/'+uuid);
+    const o = d.objects[idx] || d.objects[0];
+    const top1 = (o.retrieval_top10_cfusion||[])[0];
+    const chips = d.objects.length>1 ? `<div class="toolbar" style="margin-bottom:10px;align-items:center">
+      <span style="color:var(--gold);font-size:12px;font-weight:600">当前选中: 第 ${idx+1}/${d.objects.length} 个对象 ▾</span>
+      ${d.objects.length<=8 ? d.objects.map((ob,i)=>`<button class="pager" style="${i===idx?'border-color:var(--gold);color:var(--gold);background:rgba(255,209,102,.12);font-weight:600':''}"
+        onclick="pipeObj('${uuid}',${i})">${esc(ob.concept)} · ${esc(ob.mid)}${ob.detected?'':' (漏检)'}</button>`).join('')
+        : `<select onchange="pipeObj('${uuid}',+this.value)" style="padding:6px 10px;border-color:var(--gold)">
+            ${d.objects.map((ob,i)=>`<option value="${i}" ${i===idx?'selected':''}>${esc(ob.concept)} · ${esc(ob.mid)}${ob.detected?'':' (漏检)'}</option>`).join('')}
+          </select><span style="color:var(--tx2);font-size:12px">共 ${d.objects.length} 个对象，切换查看</span>`}
+      </div>` : '';
+    $('#pdetail').innerHTML = `<div class="panel">
+      <h2>对象回放 <span style="font-family:ui-monospace,monospace;font-size:12px;color:var(--tx2)">${esc(uuid)}</span>
+        — GT: <i>${esc(o.concept)}</i>（${esc(o.mid)}）
+        <span class="badge ${top1===o.mid?'ok':'no'}">${top1===o.mid?'检索 top-1 命中':'top-1 未命中'}</span>
+        <button class="pager" style="padding:3px 12px;margin-left:12px"
+          onclick="lbScene('${uuid}',${idx})">🔍 查看原图标注</button></h2>
+      ${chips}
+      <div style="color:var(--tx2);font-size:12px;margin-bottom:8px">
+        查询裁剪图（左侧）+ cfusion 融合候选（中列, 金框=rank-1）+ 各策略 top-10 对照</div>
+      <div class="detail">
+        <div>${o.det_box?`<div style="color:var(--tx2);font-size:12px;margin-bottom:6px">检测: ${esc(o.det_name)} conf ${esc(String(o.det_conf).slice(0,5))} · 框 [${esc(o.det_box)}]</div>`:''}
+          <div class="grid" style="grid-template-columns:1fr 1fr">
+            ${(o.query_img||d.query_img)?`<div class="itile"><img src="${media(o.query_img||d.query_img)}"><div class="c">查询裁剪图</div></div>`:'<div style="color:var(--tx2);font-size:12px">无可用查询裁剪图</div>'}
+            ${d.thumbs[top1]?`<div class="itile" style="border-color:var(--gold)"><img src="${media(d.thumbs[top1])}"><div class="c">rank-1 ${esc(top1)}</div></div>`:''}
+          </div></div>
+        <div>${(o.retrieval_top10_cfusion||[]).map((mid,i)=>{
+          const hit = mid===o.mid;
+          return `<div class="cand ${hit?'hit':''}"><span class="rk">#${i+1}</span>
+            ${d.thumbs[mid]?`<img src="${media(d.thumbs[mid])}">`:''}
+            <div class="nm">${esc(mid)} ${hit?'<span class="badge ok">GT ✓</span>':''}</div></div>`;
+        }).join('')}
+        <div style="color:var(--tx2);font-size:11px;margin-top:8px">
+          base: ${(o.retrieval_top10||[]).slice(0,6).join(', ')||'-'}<br>
+          soft: ${(o.retrieval_top10_soft||[]).slice(0,6).join(', ')||'-'}<br>
+          rrf: ${(o.retrieval_top10_rrf||[]).slice(0,6).join(', ')||'-'}</div></div>
+      </div></div>`;
+    $('#pdetail').scrollIntoView({behavior:'smooth'});
+  }catch(e){ toast(e.message); }
+};
+
+/* ================= VLM 终判 ================= */
+views.vlm = async () => {
+  $('#main').innerHTML = `<h2>VLM 终判 · 接口预留</h2>
+    <div class="panel" id="vstat">加载中…</div>
+    <div class="panel"><h2>终判协议（与训练数据同构）</h2>
+      <div style="color:var(--tx2);font-size:13px">
+        1 张查询裁剪图 + 10 张候选参考图（A-J）→ 模型输出单个选项字母 → 映射回形态种条目 →
+        与检索 top-10 融合输出推荐。<b style="color:var(--warn)">当前大模型终判成绩尚未达标，
+        接口保持预留状态</b>——微调完成后在 config/graphrag_inference.yaml 填入
+        vlm_api_url / vlm_model，本页即可在线试跑任意盲测对象。</div></div>
+    <div class="panel"><h2>选择盲测对象试跑</h2>
+      <div class="toolbar"><span style="color:var(--tx2);font-size:12px">输入场景 UUID（可在"管线回放"页点击任一对象获取）：</span>
+        <input id="vu" placeholder="3fc54b9d-1bed-4912-84e4-0934992782e4" style="width:340px">
+        <button class="pager" onclick="vlmJudge()">构造并调用</button></div>
+      <div id="vres"></div></div>`;
+  try{
+    const st = await api('/api/vlm/status');
+    $('#vstat').innerHTML = `<div class="kv">
+      <span class="k">接口状态</span><span><span class="badge ${st.alive?'ok':'no'}">${esc(st.state)}</span></span>
+      <span class="k">vlm_api_url</span><span style="font-family:ui-monospace,monospace">${esc(st.api_url||'-')}</span>
+      <span class="k">vlm_model</span><span style="font-family:ui-monospace,monospace">${esc(st.model||'-')}</span>
+      <span class="k">说明</span><span style="color:var(--tx2)">${esc(st.note)}</span></div>`;
+  }catch(e){ toast(e.message); }
+};
+window.vlmJudge = async () => {
+  const uuid = $('#vu').value.trim();
+  if(!uuid){ toast('请输入 UUID'); return; }
+  $('#vres').innerHTML = '构造 11 图选择题中…';
+  try{
+    const d = await api('/api/vlm/judge/'+uuid);
+    const rows = d.candidates.map((c,i)=>`
+      <div class="cand"><span class="rk">${String.fromCharCode(65+i)}</span>
+      ${c.ref?`<img src="${media(c.ref)}">`:''}<div class="nm">${esc(c.mid)}</div></div>`).join('');
+    $('#vres').innerHTML = `<div class="detail">
+      <div>${d.query_image?`<div class="itile"><img src="${media(d.query_image)}"><div class="c">查询裁剪图</div></div>`:''}
+        <div style="color:var(--tx2);font-size:12px;margin-top:8px">GT: ${esc(d.gt_mid)}</div>
+        <div style="margin-top:10px;color:var(--tx);font-size:13px">模型输出:
+          <span class="metric">${d.answer||'—'}</span>
+          ${d.answer_mid?`→ ${esc(d.answer_mid)}`:''}</div>
+        ${d.error?`<div style="color:var(--bad);font-size:12px;margin-top:6px">${esc(d.error)}</div>`:''}
+        ${d.status?`<div style="color:var(--warn);font-size:12px;margin-top:6px">${esc(d.status)}</div>`:''}</div>
+      <div><div style="color:var(--tx2);font-size:12px;margin-bottom:6px">候选参考图（A-J）</div>${rows}</div>
+    </div>`;
+  }catch(e){ toast(e.message); $('#vres').innerHTML=''; }
+};
+
+render();
+</script>
+</body>
+</html>
