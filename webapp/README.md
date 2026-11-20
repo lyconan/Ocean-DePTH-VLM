@@ -32,9 +32,21 @@ docker run --rm -v <数据卷>:/data -v <dump目录>:/out neo4j:5.20.0 \
 
 ### 2. 准备图像目录
 
-证据图（框切图）位于 `data/processed/` 下与图谱中 `image_id` 一致的相对路径，需与主仓数据布局一致。管线回放还需盲测数据（可选，见下方环境变量）。
+证据图（框切图）位于 `data/processed/` 下与图谱中 `image_id` 一致的相对路径，需与主仓数据布局一致。知识库/检索库/管线回放的图片渲染均依赖这些图像文件。
 
-### 3. 启动
+### 3. 部署管线回放盲测数据（可选，约 1 MB）
+
+管线回放页的逐对象回放需要一组元数据（不含图像），从魔搭资产仓下载：
+
+```bash
+# 从魔搭 ConanLee126/depth-vlm-assets 下载 blindtest_console_data.tar.gz
+modelscope download --model ConanLee126/depth-vlm-assets blindtest_console_data.tar.gz
+tar xzf blindtest_console_data.tar.gz -C <数据目录>
+```
+
+包内容：盲测场景清单（1,744 场景 / 2,121 对象）、YOLO 检测缓存、指标报告、逐对象检索结果。原始场景瓦片图为可选，缺失时仅"查看原图标注"按钮不可用，其余功能不受影响。
+
+### 4. 启动
 
 ```bash
 cd Ocean-DePTH-VLM
