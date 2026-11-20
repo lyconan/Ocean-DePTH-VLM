@@ -43,6 +43,7 @@ Ocean-DePTH-VLM-Deploy-New/
 ├── config/                  # Neo4j 连接、YOLO 训练、GraphRAG 推理配置
 ├── docs/                    # 部署与构建方法文档
 ├── deploy/                  # 一键部署（Docker Compose / 资产下载脚本 / 部署指南）
+├── webapp/                  # 可视化控制台（纯标准库零依赖：知识库/检索库/管线回放/VLM 终判预留）
 ├── data/                    # 数据与产物（不入库，运行时生成）
 └── requirements.txt
 ```
@@ -112,6 +113,18 @@ python scripts/37_closedbook_eval.py
 python scripts/24_deep_error_analysis.py
 ```
 
+### 5. 可视化控制台
+
+图谱与证据图就绪后，可启动 Web 控制台直观展示知识库 / 检索库 / 盲测管线回放：
+
+```bash
+python3 webapp/console_api.py --host 0.0.0.0 --port 8089
+# 浏览器访问 http://<IP>:8089
+```
+
+纯 Python 标准库实现（零第三方依赖）；Neo4j 地址/密码与盲测数据路径均支持环境变量覆盖（`DEPTH_NEO4J_AUTH` 等）；VLM 终判为预留接口，`config/graphrag_inference.yaml` 填入 `vlm_api_url` 即自动启用。详见 [`webapp/README.md`](webapp/README.md)。
+
+
 ## 权重与产物（外置，不入库）
 
 以下大文件由脚本产出或需自行准备，**均不入 Git 仓库**（见 `.gitignore`）：
@@ -132,9 +145,11 @@ python scripts/24_deep_error_analysis.py
 
 | 评测 | 指标 | R5 (cfusion) |
 |---|---|---|
-| 物种级 strict top-1 | 38_blindtest_detect_retrieval | **49.6** |
-| 物种级 strict top-5 | 同上 | **68.9** |
-| 物种级 strict top-10 | 同上 | **72.6** |
+| 物种级 strict top-1 | 38_blindtest_detect_retrieval | **49.8** |
+| 物种级 strict top-5 | 同上 | **69.6** |
+| 物种级 strict top-10 | 同上 | **73.2** |
+
+> 上表为 JEDI 数据下架（检索库净化至 30,629 条）后的盲测复跑结果；下架前为 49.6 / 68.9 / 72.6（见 [docs/CHANGELOG.md](docs/CHANGELOG.md) §2026-11-18）。
 
 ## 配置
 
@@ -144,6 +159,7 @@ python scripts/24_deep_error_analysis.py
 
 ## 文档
 
+- `webapp/README.md` — **可视化控制台部署**：五页功能 / 环境变量配置 / 盲测回放数据包 / VLM 终判接入
 - `docs/01_yolo_detection.md` — **第一部分 YOLO 检测**：数据集格式 / 用自己数据训练 / 替换官方权重 / 双路推理（960+TTA ∪ 1920）详解
 - `docs/深海生物知识图谱构建进展汇报.md` — 数据集搜集整理与知识图谱构建方法
 - `docs/西太平洋图集整理与OCR纠错流程总结.md` — 历史图集 OCR 数据整理流程
